@@ -1,32 +1,39 @@
 # Multi-Domain Construction AI Agent System
 
-A TypeScript-based multi-domain AI agent system built with Bun.js, Hono, MongoDB, and Redis.
+### Introducing a game-changing Agentic AI System for the Construction Industry! 🤖 This powerful AI Agent is designed to revolutionize operations across multiple departments, including Construction, Manufacturing, HR, and more. 🚧🏗️💻
+
+## A TypeScript-based multi-domain AI agent system built with Bun.js, Hono, MongoDB, and Redis.
 
 ## 🚀 Quick Start
 
 ### Prerequisites
+
 - [Bun](https://bun.sh) >= 1.0
 - [Docker](https://www.docker.com/) & Docker Compose
 
 ### Installation
 
 1. **Clone and install dependencies**
+
 ```bash
 bun install
 ```
 
 2. **Start databases**
+
 ```bash
 docker-compose up -d
 ```
 
 3. **Configure environment**
+
 ```bash
 cp .env.example .env
 # Edit .env with your API keys
 ```
 
 4. **Run development server**
+
 ```bash
 bun run dev
 ```
