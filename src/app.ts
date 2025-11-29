@@ -1,7 +1,7 @@
 import {Hono} from 'hono';
 import {env} from './config/env';
 import {logger} from './config/logger';
-
+import {redis} from './db/redis'; // Import the Redis client
 // --- Middleware Imports ---
 import {
     corsMiddleware,
@@ -25,19 +25,22 @@ import {HRAgent} from './agents/HRAgent';
 
 // --- Application Setup ---
 
-// 1. Initialize Agent Registry and Register Agents
+// 1. Initialize Agent Registry
 logger.info('Initializing agent registry...');
 const registry = AgentRegistry.getInstance();
 registry.registerAgent('construction', new ConstructionAgent());
 registry.registerAgent('hr', new HRAgent());
 logger.info('✅ Agents registered successfully.');
 
+// 2. Initialize Redis Connection
+redis.connect();
 
-// 2. Initialize Hono App
+
+// 3. Initialize Hono App
 const app = new Hono();
 
 
-// 3. Apply Middleware
+// 4. Apply Middleware
 logger.info('🔒 Applying security and logging middleware...');
 app.use('*', securityHeaders);
 app.use('*', corsMiddleware({
@@ -55,7 +58,7 @@ app.use('*', errorHandler);
 logger.info('✅ Middleware applied.');
 
 
-// 4. Define Public/Root Routes
+// 5. Define Public/Root Routes
 app.get('/', (c) => c.json({
     name: 'Multi-Purpose AI Agent API',
     version: '1.0.0',
@@ -63,17 +66,26 @@ app.get('/', (c) => c.json({
     documentation: '/api',
 }));
 
-app.get('/health', (c) => c.json({
-    status: 'healthy',
-    timestamp: new Date().toISOString()
-}));
+app.get('/health', async (c) => {
+    const redisHealthy = await redis.healthCheck();
+    const status = redisHealthy ? 'healthy' : 'unhealthy';
+    const statusCode = redisHealthy ? 200 : 503;
+
+    return c.json({
+        status,
+        timestamp: new Date().toISOString(),
+        dependencies: {
+            redis: redisHealthy ? 'healthy' : 'unhealthy',
+        },
+    }, statusCode);
+});
 
 
-// 5. Define API Routes
+// 6. Define API Routes
 const api = new Hono();
 api.route('/agents', agentRouter);
 api.route('/workflows', workflowRouter);
-api.route('/construction', constructionRouter); // Keep for direct access if needed
+api.route('/construction', constructionRouter);
 
 api.get('/', (c) => c.json({
     message: 'AI Agent API',
@@ -88,7 +100,7 @@ api.get('/', (c) => c.json({
 app.route('/api', api);
 
 
-// 6. Not Found and Error Handlers
+// 7. Not Found and Error Handlers
 app.notFound((c) => c.json({
     error: 'Not Found',
     message: 'The requested endpoint does not exist.'

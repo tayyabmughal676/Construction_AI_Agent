@@ -3,14 +3,16 @@ import {z} from 'zod';
 
 const TaskSchema = z.object({
     name: z.string(),
-    duration: z.number(), // in days
+    duration: z.number().positive('Duration must be a positive number.'), // in days
     dependencies: z.array(z.string()).optional().default([]),
 });
 
 const TimelineSchema = z.object({
     projectName: z.string(),
     tasks: z.array(TaskSchema),
-    startDate: z.string().optional(),
+    startDate: z.string().datetime({
+        message: 'Invalid start date format.'
+    }).optional(),
 });
 
 export class TimelineEstimatorTool implements BaseTool {
@@ -21,19 +23,19 @@ export class TimelineEstimatorTool implements BaseTool {
         try {
             const validated = TimelineSchema.parse(params);
 
-            const startDate = validated.startDate
-                ? new Date(validated.startDate)
-                : new Date();
+            const startDate = validated.startDate ?
+                new Date(validated.startDate) :
+                new Date();
 
             // Simple timeline calculation (no dependency graph for now)
             const timeline = validated.tasks.map((task, index) => {
                 const taskStart = new Date(startDate);
 
-                // Calculate start date based on previous tasks
-                let daysOffset = 0;
-                for (let i = 0; i < index; i++) {
-                    daysOffset += validated.tasks[i].duration;
-                }
+                // Calculate offset by summing durations of all preceding tasks
+                const daysOffset = validated.tasks
+                    .slice(0, index)
+                    .reduce((sum, prevTask) => sum + prevTask.duration, 0);
+
                 taskStart.setDate(taskStart.getDate() + daysOffset);
 
                 const taskEnd = new Date(taskStart);
@@ -65,9 +67,16 @@ export class TimelineEstimatorTool implements BaseTool {
                 },
             };
         } catch (error) {
+            if (error instanceof z.ZodError) {
+                return {
+                    success: false,
+                    error: 'Validation failed',
+                    details: error.flatten()
+                };
+            }
             return {
                 success: false,
-                error: error instanceof Error ? error.message : 'Unknown error',
+                error: error instanceof Error ? error.message : 'An unknown error occurred.',
             };
         }
     }

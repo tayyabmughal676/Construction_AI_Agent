@@ -21,10 +21,13 @@ services:
     container_name: multi-ai-redis
     ports:
       - "6379:6379"
+    # Add this command to set a password
+    command: redis-server --requirepass your_redis_password
     volumes:
       - redis_data:/data
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      # Update the healthcheck to use the password
+      test: ["CMD", "redis-cli", "-a", "your_redis_password", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
