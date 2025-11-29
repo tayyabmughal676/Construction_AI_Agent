@@ -41,7 +41,7 @@ const app = new Hono();
 logger.info('🔒 Applying security and logging middleware...');
 app.use('*', securityHeaders);
 app.use('*', corsMiddleware({
-    origin: env.ALLOWED_ORIGINS ? .split(',') || ['*']
+    origin: env.ALLOWED_ORIGINS?.split(',') || ['*']
 }));
 app.use('*', rateLimiter({
     limit: parseInt(env.RATE_LIMIT || '100'),
