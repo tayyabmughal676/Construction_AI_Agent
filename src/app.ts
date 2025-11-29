@@ -1,81 +1,108 @@
-import { Hono } from 'hono';
-import { logger as pinoLogger } from 'hono/logger';
-import { cors } from 'hono/cors';
-import { env } from './config/env';
-import { logger } from './config/logger';
+import {Hono} from 'hono';
+import {env} from './config/env';
+import {logger} from './config/logger';
+
+// --- Middleware Imports ---
+import {
+    corsMiddleware,
+    errorHandler,
+    rateLimiter,
+    requestLogger,
+    securityHeaders,
+    validateRequest,
+} from './middleware/security';
+
+// --- Route Imports ---
 import constructionRouter from './routes/construction';
 import agentRouter from './routes/agents';
+import workflowRouter from './routes/workflows';
 
+// --- Agent Registration ---
+import {AgentRegistry} from './agents/AgentRegistry';
+import {ConstructionAgent} from './agents/ConstructionAgent';
+import {HRAgent} from './agents/HRAgent';
+
+
+// --- Application Setup ---
+
+// 1. Initialize Agent Registry and Register Agents
+logger.info('Initializing agent registry...');
+const registry = AgentRegistry.getInstance();
+registry.registerAgent('construction', new ConstructionAgent());
+registry.registerAgent('hr', new HRAgent());
+logger.info('✅ Agents registered successfully.');
+
+
+// 2. Initialize Hono App
 const app = new Hono();
 
-// Middleware
-app.use('*', pinoLogger());
-app.use('*', cors());
 
-// Health check endpoint (basic version without DB checks)
-app.get('/health', async (c) => {
-    return c.json({
-        status: 'healthy',
-        timestamp: new Date().toISOString(),
-        message: 'Server is running (databases not checked yet)',
-    });
-});
+// 3. Apply Middleware
+logger.info('🔒 Applying security and logging middleware...');
+app.use('*', securityHeaders);
+app.use('*', corsMiddleware({
+    origin: env.ALLOWED_ORIGINS ? .split(',') || ['*']
+}));
+app.use('*', rateLimiter({
+    limit: parseInt(env.RATE_LIMIT || '100'),
+    windowMs: parseInt(env.RATE_WINDOW_MS || '900000')
+}));
+app.use('*', validateRequest({
+    maxBodySize: parseInt(env.MAX_BODY_SIZE || '1048576')
+}));
+app.use('*', requestLogger);
+app.use('*', errorHandler);
+logger.info('✅ Middleware applied.');
 
-// Root endpoint
-app.get('/', (c) => {
-    return c.json({
-        name: 'Multi-Purpose AI Agent API',
-        version: '1.0.0',
-        status: 'running',
-        phase: 'Phase 3 - Multi-Agent Router ✅',
-        endpoints: {
-            health: '/health',
-            api: '/api',
-            agents: '/api/agents (unified multi-agent endpoint)',
-        },
-    });
-});
 
-// API routes
-app.route('/api/agents', agentRouter);        // NEW: Unified multi-agent router
-app.route('/api/construction', constructionRouter);
+// 4. Define Public/Root Routes
+app.get('/', (c) => c.json({
+    name: 'Multi-Purpose AI Agent API',
+    version: '1.0.0',
+    status: 'running',
+    documentation: '/api',
+}));
 
-app.get('/api', (c) => {
-    return c.json({
-        message: 'Multi-Purpose AI Agent API',
-        unified: {
-            chat: 'POST /api/agents/chat (auto-routes to correct department)',
-            capabilities: 'GET /api/agents/capabilities (all departments)',
-            stats: 'GET /api/agents/stats',
-            detect: 'POST /api/agents/detect (test department detection)',
-        },
-        departments: {
-            construction: '/api/construction',
-            manufacturing: '/api/manufacturing (coming in Phase 3.1)',
-            hr: '/api/hr (coming in Phase 3.2)',
-        },
-        endpoints: {
-            construction: {
-                chat: 'POST /api/construction/chat',
-                capabilities: 'GET /api/construction/capabilities',
-                tools: 'POST /api/construction/tools/:toolName',
-            },
-        },
-    });
-});
+app.get('/health', (c) => c.json({
+    status: 'healthy',
+    timestamp: new Date().toISOString()
+}));
 
-// 404 handler
-app.notFound((c) => {
-    return c.json({ error: 'Not Found' }, 404);
-});
 
-// Error handler
+// 5. Define API Routes
+const api = new Hono();
+api.route('/agents', agentRouter);
+api.route('/workflows', workflowRouter);
+api.route('/construction', constructionRouter); // Keep for direct access if needed
+
+api.get('/', (c) => c.json({
+    message: 'AI Agent API',
+    routes: {
+        unified_chat: 'POST /agents/chat',
+        list_capabilities: 'GET /agents/capabilities',
+        workflows: 'POST /workflows/execute',
+        list_workflows: 'GET /workflows/list',
+    }
+}));
+
+app.route('/api', api);
+
+
+// 6. Not Found and Error Handlers
+app.notFound((c) => c.json({
+    error: 'Not Found',
+    message: 'The requested endpoint does not exist.'
+}, 404));
+
 app.onError((err, c) => {
-    logger.error({ err }, 'Unhandled error');
+    logger.error({
+        err
+    }, 'An unhandled error occurred');
     return c.json({
         error: 'Internal Server Error',
-        message: env.NODE_ENV === 'development' ? err.message : undefined,
+        message: env.NODE_ENV === 'development' ? err.message : 'A server error occurred.',
     }, 500);
 });
+
 
 export default app;

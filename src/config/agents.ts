@@ -1,6 +1,8 @@
-import { AgentRegistry } from '../agents/AgentRegistry';
-import { ConstructionAgent } from '../agents/ConstructionAgent';
-import { logger } from '../config/logger';
+import {AgentRegistry} from '../agents/AgentRegistry';
+import {ConstructionAgent} from '../agents/ConstructionAgent';
+import {HRAgent} from '../agents/HRAgent';
+import {ManufacturingAgent} from '../agents/ManufacturingAgent';
+import {logger} from '../config/logger';
 
 /**
  * Initialize all agents and register them with the AgentRegistry
@@ -13,13 +15,13 @@ export function initializeAgents(): void {
     const constructionAgent = new ConstructionAgent();
     registry.registerAgent('construction', constructionAgent);
 
-    // TODO: Initialize Manufacturing Agent (Phase 3.1)
-    // const manufacturingAgent = new ManufacturingAgent();
-    // registry.registerAgent('manufacturing', manufacturingAgent);
+    // Initialize HR Agent (Phase 3.2) ✅
+    const hrAgent = new HRAgent();
+    registry.registerAgent('hr', hrAgent);
 
-    // TODO: Initialize HR Agent (Phase 3.2)
-    // const hrAgent = new HRAgent();
-    // registry.registerAgent('hr', hrAgent);
+    // Initialize Manufacturing Agent (Phase 3.1) ✅
+    const manufacturingAgent = new ManufacturingAgent();
+    registry.registerAgent('manufacturing', manufacturingAgent);
 
     logger.info({
         departments: registry.getDepartments(),

@@ -1,5 +1,5 @@
-import type { BaseAgent } from './BaseAgent';
-import { logger } from '../config/logger';
+import type {BaseAgent} from './BaseAgent';
+import {logger} from '../config/logger';
 
 /**
  * Central registry for all agents
@@ -9,7 +9,8 @@ export class AgentRegistry {
     private static instance: AgentRegistry;
     private agents: Map<string, BaseAgent> = new Map();
 
-    private constructor() { }
+    private constructor() {
+    }
 
     /**
      * Get singleton instance

@@ -1,6 +1,6 @@
-import { MongoClient, Db } from 'mongodb';
-import { env } from '../config/env';
-import { logger } from '../config/logger';
+import {Db, MongoClient} from 'mongodb';
+import {env} from '../config/env';
+import {logger} from '../config/logger';
 
 class MongoDB {
     private client: MongoClient | null = null;
@@ -19,7 +19,7 @@ class MongoDB {
             logger.info('✅ MongoDB connected successfully');
             return this.db;
         } catch (error) {
-            logger.error({ error }, '❌ MongoDB connection failed');
+            logger.error({error}, '❌ MongoDB connection failed');
             throw error;
         }
     }

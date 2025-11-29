@@ -1,5 +1,5 @@
-import { config } from 'dotenv';
-import { z } from 'zod';
+import {config} from 'dotenv';
+import {z} from 'zod';
 
 // Load environment variables
 config();
@@ -26,6 +26,10 @@ const envSchema = z.object({
     // Security
     JWT_SECRET: z.string().default('dev-secret-key'),
     JWT_EXPIRES_IN: z.string().default('7d'),
+    ALLOWED_ORIGINS: z.string().optional(),
+    RATE_LIMIT: z.string().default('100'),
+    RATE_WINDOW_MS: z.string().default('900000'), // 15 minutes
+    MAX_BODY_SIZE: z.string().default('1048576'), // 1MB
 
     // Logging
     LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),

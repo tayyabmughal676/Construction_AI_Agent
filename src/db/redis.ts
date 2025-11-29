@@ -1,6 +1,6 @@
 import Redis from 'ioredis';
-import { env } from '../config/env';
-import { logger } from '../config/logger';
+import {env} from '../config/env';
+import {logger} from '../config/logger';
 
 class RedisClient {
     private client: Redis | null = null;
@@ -14,10 +14,16 @@ class RedisClient {
             host: env.REDIS_HOST,
             port: parseInt(env.REDIS_PORT),
             password: env.REDIS_PASSWORD || undefined,
+            maxRetriesPerRequest: 1,
             retryStrategy: (times) => {
-                const delay = Math.min(times * 50, 2000);
+                // Only retry 3 times
+                if (times > 3) {
+                    return null; // Stop retrying
+                }
+                const delay = Math.min(times * 50, 500);
                 return delay;
             },
+            lazyConnect: true, // Don't connect immediately
         });
 
         this.client.on('connect', () => {
@@ -25,7 +31,12 @@ class RedisClient {
         });
 
         this.client.on('error', (error) => {
-            logger.error({ error }, '❌ Redis connection error');
+            // Only log once, not repeatedly
+            if (error.message.includes('ECONNREFUSED')) {
+                // Silently ignore connection refused
+                return;
+            }
+            logger.error({error}, '❌ Redis connection error');
         });
 
         return this.client;

@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import {z} from 'zod';
 
 // Tool definition schema
 export const ToolSchema = z.object({
@@ -18,6 +18,7 @@ export interface ToolResult {
 export interface BaseTool {
     name: string;
     description: string;
+
     execute(params: any): Promise<ToolResult>;
 }
 

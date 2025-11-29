@@ -1,5 +1,5 @@
-import type { BaseTool, ToolResult } from '../../agents/types';
-import { z } from 'zod';
+import type {BaseTool, ToolResult} from '../../agents/types';
+import {z} from 'zod';
 
 const TaskSchema = z.object({
     name: z.string(),

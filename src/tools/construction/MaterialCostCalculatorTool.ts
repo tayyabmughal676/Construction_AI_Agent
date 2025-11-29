@@ -1,5 +1,5 @@
-import type { BaseTool, ToolResult } from '../../agents/types';
-import { z } from 'zod';
+import type {BaseTool, ToolResult} from '../../agents/types';
+import {z} from 'zod';
 
 const MaterialSchema = z.object({
     material: z.string(),
@@ -32,7 +32,7 @@ export class MaterialCostCalculatorTool implements BaseTool {
 
     async execute(params: any): Promise<ToolResult> {
         try {
-            const { materials } = params;
+            const {materials} = params;
 
             if (!materials || !Array.isArray(materials)) {
                 return {
