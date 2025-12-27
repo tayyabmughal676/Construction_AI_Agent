@@ -182,6 +182,35 @@ curl -X POST http://localhost:3000/api/agents/chat \
 
 ---
 
+## 🏛️ Super-Orchestrator: Company Control (LangGraph)
+This endpoint uses LangGraph to decompose complex, multi-step requests into sequential tasks and executes them across all relevant departments.
+
+### 🧩 Scenario 1: Complex Multi-Step Task (HR + Construction)
+"Hire a new manager and create a project for them."
+
+```bash
+curl -X POST http://localhost:3000/api/workflows/langgraph/company-control \
+  -H "Content-Type: application/json" \
+  -d '{
+    "message": "Hire Alice Wonderland as a project manager in the Engineering department and then create a foundation project called WonderFoundation",
+    "sessionId": "super-1"
+  }'
+```
+
+### 🧩 Scenario 2: Chain of Commands (Manufacturing + Construction)
+"Check steel inventory and create a project if we have enough."
+
+```bash
+curl -X POST http://localhost:3000/api/workflows/langgraph/company-control \
+  -H "Content-Type: application/json" \
+  -d '{
+    "message": "Check the current stock of Steel Beams and then list all construction projects",
+    "sessionId": "super-2"
+  }'
+```
+
+---
+
 ## 🛠️ Debugging Tips
 - **Logs:** Watch the terminal running `bun run dev`. 
   - `[LangGraph]` markers show workflow state.

@@ -1,11 +1,51 @@
-import {Hono} from 'hono';
-import {z} from 'zod';
-import {ConstructionAgent} from '../agents/ConstructionAgent';
-import {logger} from '../config/logger';
-import {randomUUID} from 'crypto';
-import {ChatRequestSchema, ToolExecutionRequestSchema} from '../utils/validators';
+import { Hono } from 'hono';
+import { z } from 'zod';
+import { ConstructionAgent } from '../agents/ConstructionAgent';
+import { logger } from '../config/logger';
+import { randomUUID } from 'crypto';
+import { ChatRequestSchema, ToolExecutionRequestSchema } from '../utils/validators';
+import { AgentRegistry } from '../agents/AgentRegistry'; // Added import for AgentRegistry
 
 const constructionRouter = new Hono();
+
+/**
+ * GET /api/construction/projects
+ * Returns active and pending construction projects.
+ */
+constructionRouter.get('/projects', async (c) => {
+    try {
+        const registry = AgentRegistry.getInstance();
+        const agent = registry.getAgent('construction');
+
+        if (!agent) {
+            return c.json({ error: 'Construction Agent not found' }, 500);
+        }
+
+        const result = await agent.executeTool('project_tracker', {
+            action: 'list'
+        });
+
+        if (!result.success) {
+            return c.json({ error: result.error }, 400);
+        }
+
+        // Map to frontend format
+        const projects = result.data.projects.map((p: any) => ({
+            id: p.projectId,
+            name: p.name,
+            location: p.location || 'Site A',
+            budget: `$${(p.budget / 1000000).toFixed(1)}M`,
+            progress: p.progress || 0,
+            status: p.status === 'active' ? 'On Track' : p.status === 'completed' ? 'Finished' : 'Planned'
+        }));
+
+        return c.json({ projects });
+    } catch (error) {
+        logger.error({ error }, 'Error in GET /api/construction/projects');
+        return c.json({ error: 'Internal server error' }, 500);
+    }
+});
+
 const agent = new ConstructionAgent();
 
 // --- Endpoints ---

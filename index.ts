@@ -34,20 +34,18 @@ async function startServer() {
             fetch: app.fetch,
         });
 
-        logger.info('🎉 Phase 3 - Multi-Agent Router Ready!');
+        logger.info('🎉 Multi-Agent Enterprise Orchestrator Ready!');
         logger.info(`🚀 Server running on http://localhost:${server.port}`);
         logger.info(`📊 Environment: ${env.NODE_ENV}`);
         logger.info(`🏥 Health check: http://localhost:${server.port}/health`);
         logger.info('');
-        logger.info('✅ Core infrastructure ready');
+        logger.info('✅ Production-Ready Infrastructure initialized');
         logger.info('✅ Hono server running');
-        logger.info('✅ Logger configured');
-        logger.info('✅ Environment validated');
-        logger.info('✅ Agent Router initialized');
-        logger.info('✅ MongoDB connected');
-        logger.info('✅ Redis connected');
+        logger.info('✅ Multi-Agent Orchestrator active');
+        logger.info('✅ LangGraph Workflows registered');
+        logger.info('✅ MongoDB & Redis persistence online');
         logger.info('');
-        logger.info('📝 Next: Phase 3.1 - Manufacturing Agent');
+        logger.info('🚀 System is live and ready for production usage.');
     } catch (error) {
         logger.error({ error }, 'Failed to start server');
         process.exit(1);

@@ -16,6 +16,8 @@ import {
 import constructionRouter from './routes/construction';
 import agentRouter from './routes/agents';
 import workflowRouter from './routes/workflows';
+import hrRouter from './routes/hr';
+import manufacturingRouter from './routes/manufacturing';
 
 // --- Agent Registration ---
 import { AgentRegistry } from './agents/AgentRegistry';
@@ -85,17 +87,24 @@ app.get('/health', async (c) => {
 
 // 6. Define API Routes
 const api = new Hono();
-api.route('/agents', agentRouter);
-api.route('/workflows', workflowRouter);
-api.route('/construction', constructionRouter);
 
+// Unified entry points
+api.route('/agents', agentRouter);      // Unified Chat & Capabilities
+api.route('/workflows', workflowRouter);  // LangGraph & System Workflows
+api.route('/hr', hrRouter);
+api.route('/construction', constructionRouter);
+api.route('/manufacturing', manufacturingRouter);
+
+// Root API info
 api.get('/', (c) => c.json({
-    message: 'AI Agent API',
-    routes: {
-        unified_chat: 'POST /agents/chat',
-        list_capabilities: 'GET /agents/capabilities',
-        workflows: 'POST /workflows/execute',
-        list_workflows: 'GET /workflows/list',
+    message: 'Multi-Agent Construction & Industrial API',
+    version: '1.2.0',
+    endpoints: {
+        chat: 'POST /api/agents/chat',
+        capabilities: 'GET /api/agents/capabilities',
+        orchestrator: 'POST /api/workflows/langgraph/company-control',
+        onboarding: 'POST /api/workflows/langgraph/execute',
+        health: 'GET /health'
     }
 }));
 

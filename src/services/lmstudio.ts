@@ -111,9 +111,75 @@ class LMStudioService {
     }
 
     /**
-     * A robust method to parse JSON from a string, which might contain markdown backticks,
-     * preamble text, or 'thought' blocks.
+     * Decomposes a complex message into multiple sequential tasks.
      */
+    async decomposeTasks(
+        message: string,
+        agents: { department: string; name: string; description: string; actions: string[] }[]
+    ): Promise<z.infer<typeof IntentSchema>[]> {
+        if (!this.isAvailable()) {
+            throw new Error('LM Studio service is not available.');
+        }
+
+        const agentContext = agents
+            .map(a => `- ${a.department.toUpperCase()}: ${a.description}\n  Actions: ${a.actions.join(', ')}`)
+            .join('\n');
+
+        const prompt = `
+      You are a task decomposer for a construction company's AI system. 
+      Analyze the user's request and break it down into a sequence of specific tasks for our departments.
+
+      Available Agents:
+      ${agentContext}
+
+      User message: "${message}"
+
+      Task:
+      Break the message into 1 or more sequential steps. 
+      Each step must have a 'department', a valid 'action' from that department's list, and 'parameters'.
+
+      Example Output:
+      [
+        { "department": "hr", "action": "create", "parameters": { "firstName": "John", ... }, "confidence": 1.0, "reasoning": "..." },
+        { "department": "construction", "action": "create_project", "parameters": { "projectName": "Johns Site", ... }, "confidence": 0.95, "reasoning": "..." }
+      ]
+
+      Respond ONLY with a valid JSON array of objects.
+    `;
+
+        try {
+            const response = await this.model!.invoke(prompt);
+            const content = response.content.toString();
+
+            // Find the JSON array
+            const jsonStart = content.indexOf('[');
+            const jsonEnd = content.lastIndexOf(']');
+            if (jsonStart === -1 || jsonEnd === -1) {
+                // Fallback: maybe it's a single object?
+                const single = await this.detectIntent(message, agents);
+                return [single];
+            }
+
+            const jsonString = content.substring(jsonStart, jsonEnd + 1);
+            const tasks = JSON.parse(jsonString);
+
+            if (!Array.isArray(tasks)) {
+                const single = await this.detectIntent(message, agents);
+                return [single];
+            }
+
+            return tasks.map(t => IntentSchema.parse(t));
+
+        } catch (error) {
+            logger.error({ error, message }, 'Task decomposition failed. Falling back to single intent.');
+            try {
+                const single = await this.detectIntent(message, agents);
+                return [single];
+            } catch (innerError) {
+                throw new Error('Workflow decomposition completely failed.');
+            }
+        }
+    }
     private parseJsonResponse(rawString: string): any {
         logger.debug({ rawString }, 'Parsing LLM response');
 

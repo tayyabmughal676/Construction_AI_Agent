@@ -1,5 +1,5 @@
-import type {Context, Next} from 'hono';
-import {logger} from '../config/logger';
+import type { Context, Next } from 'hono';
+import { logger } from '../config/logger';
 
 /**
  * Security Middleware
@@ -20,19 +20,19 @@ class RateLimitStore {
         if (!record || now > record.resetTime) {
             // New window
             const resetTime = now + windowMs;
-            this.requests.set(key, {count: 1, resetTime});
-            return {allowed: true, remaining: limit - 1, resetTime};
+            this.requests.set(key, { count: 1, resetTime });
+            return { allowed: true, remaining: limit - 1, resetTime };
         }
 
         if (record.count >= limit) {
             // Rate limit exceeded
-            return {allowed: false, remaining: 0, resetTime: record.resetTime};
+            return { allowed: false, remaining: 0, resetTime: record.resetTime };
         }
 
         // Increment count
         record.count++;
         this.requests.set(key, record);
-        return {allowed: true, remaining: limit - record.count, resetTime: record.resetTime};
+        return { allowed: true, remaining: limit - record.count, resetTime: record.resetTime };
     }
 
     cleanup(): void {
@@ -67,9 +67,16 @@ export const rateLimiter = (options: {
         // Get client IP
         const forwardedFor = c.req.header('x-forwarded-for');
         const realIp = c.req.header('x-real-ip');
-        const ip = forwardedFor?.split(',')[0].trim() || realIp || 'unknown';
+        const ip = forwardedFor?.split(',')[0]?.trim() || realIp || 'unknown';
 
         const key = `ratelimit:${ip}`;
+
+        // Skip rate limiting if disabled in config
+        if (process.env.ENABLE_RATE_LIMIT === 'false') {
+            await next();
+            return;
+        }
+
         const result = rateLimitStore.check(key, limit, windowMs);
 
         // Set rate limit headers
@@ -112,7 +119,7 @@ export const sanitizeInput = async (c: Context, next: Next) => {
             });
         }
     } catch (error) {
-        logger.error({error}, 'Error sanitizing input');
+        logger.error({ error }, 'Error sanitizing input');
     }
 
     await next();
@@ -186,7 +193,7 @@ export const corsMiddleware = (options: {
 
         // Handle preflight requests
         if (c.req.method === 'OPTIONS') {
-            return new Response('', {status: 204});
+            return new Response('', { status: 204 });
         }
 
         await next();
@@ -243,7 +250,7 @@ export const validateRequest = (options: {
                 path: c.req.path,
             }, 'Method not allowed');
 
-            return c.json({error: 'Method not allowed'}, 405);
+            return c.json({ error: 'Method not allowed' }, 405);
         }
 
         // Check content length
@@ -255,7 +262,7 @@ export const validateRequest = (options: {
                 path: c.req.path,
             }, 'Request body too large');
 
-            return c.json({error: 'Request body too large'}, 413);
+            return c.json({ error: 'Request body too large' }, 413);
         }
 
         await next();
@@ -273,19 +280,19 @@ export const ipFilter = (options: {
     return async (c: Context, next: Next) => {
         const forwardedFor = c.req.header('x-forwarded-for');
         const realIp = c.req.header('x-real-ip');
-        const ip = forwardedFor?.split(',')[0].trim() || realIp || 'unknown';
+        const ip = forwardedFor?.split(',')[0]?.trim() || realIp || 'unknown';
 
         // Check blacklist first
         if (options.blacklist && options.blacklist.includes(ip)) {
-            logger.warn({ip, path: c.req.path}, 'IP blocked (blacklist)');
-            return c.json({error: 'Access denied'}, 403);
+            logger.warn({ ip, path: c.req.path }, 'IP blocked (blacklist)');
+            return c.json({ error: 'Access denied' }, 403);
         }
 
         // Check whitelist if configured
         if (options.whitelist && options.whitelist.length > 0) {
             if (!options.whitelist.includes(ip)) {
-                logger.warn({ip, path: c.req.path}, 'IP not in whitelist');
-                return c.json({error: 'Access denied'}, 403);
+                logger.warn({ ip, path: c.req.path }, 'IP not in whitelist');
+                return c.json({ error: 'Access denied' }, 403);
             }
         }
 
@@ -301,7 +308,7 @@ export const requestLogger = async (c: Context, next: Next) => {
     const start = Date.now();
     const forwardedFor = c.req.header('x-forwarded-for');
     const realIp = c.req.header('x-real-ip');
-    const ip = forwardedFor?.split(',')[0].trim() || realIp || 'unknown';
+    const ip = forwardedFor?.split(',')[0]?.trim() || realIp || 'unknown';
 
     await next();
 
@@ -342,36 +349,3 @@ export const errorHandler = async (c: Context, next: Next) => {
     }
 };
 
-/**
- * Combined Security Middleware
- * Apply all security measures at once
- */
-export const applySecurity = (app: any) => {
-    // Apply security headers
-    app.use('*', securityHeaders);
-
-    // Apply CORS
-    app.use('*', corsMiddleware({
-        origin: process.env.ALLOWED_ORIGINS?.split(',') || ['*'],
-        credentials: true,
-    }));
-
-    // Apply rate limiting
-    app.use('*', rateLimiter({
-        limit: parseInt(process.env.RATE_LIMIT || '100'),
-        windowMs: parseInt(process.env.RATE_WINDOW_MS || '900000'), // 15 minutes
-    }));
-
-    // Apply request validation
-    app.use('*', validateRequest({
-        maxBodySize: parseInt(process.env.MAX_BODY_SIZE || '1048576'), // 1MB
-    }));
-
-    // Apply request logging
-    app.use('*', requestLogger);
-
-    // Apply error handler
-    app.use('*', errorHandler);
-
-    logger.info('Security middleware applied');
-};

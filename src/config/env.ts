@@ -29,8 +29,9 @@ const envSchema = z.object({
     JWT_SECRET: z.string().default('dev-secret-key'),
     JWT_EXPIRES_IN: z.string().default('7d'),
     ALLOWED_ORIGINS: z.string().optional(),
-    RATE_LIMIT: z.string().default('100'),
+    RATE_LIMIT: z.string().default('10000'),
     RATE_WINDOW_MS: z.string().default('900000'), // 15 minutes
+    ENABLE_RATE_LIMIT: z.string().default('true'),
     MAX_BODY_SIZE: z.string().default('1048576'), // 1MB
 
     // Logging

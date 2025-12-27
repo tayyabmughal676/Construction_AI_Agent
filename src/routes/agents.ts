@@ -1,9 +1,9 @@
-import {Hono} from 'hono';
-import {z} from 'zod';
-import {AgentRouter} from '../agents/AgentRouter';
-import {logger} from '../config/logger';
-import {randomUUID} from 'crypto';
-import {RoutedChatRequestSchema} from '../utils/validators';
+import { Hono } from 'hono';
+import { z } from 'zod';
+import { AgentRouter } from '../agents/AgentRouter';
+import { logger } from '../config/logger';
+import { randomUUID } from 'crypto';
+import { RoutedChatRequestSchema } from '../utils/validators';
 
 const agentApiRouter = new Hono();
 const agentRouter = new AgentRouter();
@@ -23,7 +23,8 @@ agentApiRouter.post('/chat', async (c) => {
             department
         } = RoutedChatRequestSchema.parse(body);
 
-        const routingContext = department ? { ...context,
+        const routingContext = department ? {
+            ...context,
             department
         } : context;
 
@@ -59,35 +60,6 @@ agentApiRouter.get('/capabilities', (c) => {
         registered_departments: Object.keys(capabilities),
         capabilities,
     });
-});
-
-/**
- * Provides statistics about the agent router.
- */
-agentApiRouter.get('/stats', (c) => {
-    const stats = agentRouter.getStats();
-    return c.json(stats);
-});
-
-/**
- * A test endpoint to predict which department would be chosen for a given message.
- */
-agentApiRouter.post('/detect', async (c) => {
-    try {
-        const {
-            message,
-            context
-        } = await c.req.json();
-        const detection = await agentRouter.detectDepartment(message, context);
-        return c.json(detection);
-    } catch (error) {
-        logger.error({
-            error
-        }, 'Error in detect endpoint');
-        return c.json({
-            error: 'Failed to detect department'
-        }, 400);
-    }
 });
 
 export default agentApiRouter;
