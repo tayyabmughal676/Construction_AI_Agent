@@ -1,6 +1,6 @@
-import {logger} from '../config/logger';
-import type {StepResult, Workflow, WorkflowOptions, WorkflowResult, WorkflowState, WorkflowStep,} from './types';
-import {randomUUID} from 'crypto';
+import { logger } from '../config/logger';
+import type { StepResult, Workflow, WorkflowOptions, WorkflowResult, WorkflowState, WorkflowStep, } from './types';
+import { randomUUID } from 'crypto';
 
 /**
  * Workflow Engine
@@ -42,6 +42,7 @@ export class WorkflowEngine {
             // Execute each step
             for (let i = 0; i < workflow.steps.length; i++) {
                 const step = workflow.steps[i];
+                if (!step) continue;
                 state.currentStep = i + 1;
 
                 logger.info({

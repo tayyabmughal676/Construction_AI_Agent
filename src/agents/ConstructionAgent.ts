@@ -1,13 +1,13 @@
-import {BaseAgent} from './BaseAgent';
-import type {AgentResponse} from './types';
-import {ProjectTrackerTool} from '../tools/construction/ProjectTrackerTool';
-import {MaterialCostCalculatorTool} from '../tools/construction/MaterialCostCalculatorTool';
-import {TimelineEstimatorTool} from '../tools/construction/TimelineEstimatorTool';
-import {SafetyChecklistTool} from '../tools/construction/SafetyChecklistTool';
-import {CSVGeneratorTool} from '../tools/utils/CSVGeneratorTool';
-import {ExcelGeneratorTool} from '../tools/utils/ExcelGeneratorTool';
-import {PDFGeneratorTool} from '../tools/utils/PDFGeneratorTool';
-import {logger} from '../config/logger';
+import { BaseAgent } from './BaseAgent';
+import type { AgentResponse, DepartmentDetection } from './types';
+import { ProjectTrackerTool } from '../tools/construction/ProjectTrackerTool';
+import { MaterialCostCalculatorTool } from '../tools/construction/MaterialCostCalculatorTool';
+import { TimelineEstimatorTool } from '../tools/construction/TimelineEstimatorTool';
+import { SafetyChecklistTool } from '../tools/construction/SafetyChecklistTool';
+import { CSVGeneratorTool } from '../tools/utils/CSVGeneratorTool';
+import { ExcelGeneratorTool } from '../tools/utils/ExcelGeneratorTool';
+import { PDFGeneratorTool } from '../tools/utils/PDFGeneratorTool';
+import { logger } from '../config/logger';
 
 // Type definitions for our intent-based routing
 type IntentHandler = (
@@ -18,6 +18,7 @@ type IntentHandler = (
 interface Intent {
     name: string;
     keywords: string[];
+    action?: string;
     handler: IntentHandler;
 }
 
@@ -44,52 +45,59 @@ export class ConstructionAgent extends BaseAgent {
     }
 
     /**
-     * Defines the mapping from keywords to agent actions.
-     * This makes the agent's capabilities declarative and easy to extend.
+     * Defines the mapping from keywords and actions to agent actions.
      */
     private initializeIntents(): void {
         this.intents = [
             // Project Tracking
             {
                 name: 'Create Project',
+                action: 'CREATE_PROJECT',
                 keywords: ['create project', 'new project'],
                 handler: this.handleCreateProject,
             },
             {
                 name: 'List Projects',
+                action: 'LIST_PROJECTS',
                 keywords: ['list project', 'show project', 'view all projects'],
                 handler: this.handleListProjects,
             },
             // Cost & Timeline
             {
                 name: 'Calculate Material Cost',
+                action: 'CALCULATE_COST',
                 keywords: ['material cost', 'calculate cost'],
                 handler: this.handleCalculateMaterialCost,
             },
             {
                 name: 'Estimate Timeline',
+                action: 'ESTIMATE_TIMELINE',
                 keywords: ['timeline', 'schedule', 'estimate duration'],
                 handler: this.handleEstimateTimeline,
             },
             // Safety
             {
                 name: 'Generate Safety Checklist',
+                action: 'GENERATE_CHECKLIST',
                 keywords: ['safety', 'checklist'],
                 handler: this.handleGenerateSafetyChecklist,
             },
             // Exporting
             {
                 name: 'Export to CSV',
+                action: 'EXPORT_CSV',
                 keywords: ['export csv', 'download csv'],
                 handler: (msg, ctx) => this.handleExport('csv', ctx),
             },
             {
                 name: 'Export to Excel',
+                action: 'EXPORT_EXCEL',
                 keywords: ['export excel', 'download excel', 'export xlsx'],
                 handler: (msg, ctx) => this.handleExport('excel', ctx),
             },
             {
                 name: 'Export to PDF',
+                action: 'EXPORT_PDF',
                 keywords: ['export pdf', 'download pdf'],
                 handler: (msg, ctx) => this.handleExport('pdf', ctx),
             },
@@ -108,21 +116,27 @@ export class ConstructionAgent extends BaseAgent {
     async processMessage(
         message: string,
         sessionId: string,
-        context?: Record<string, any>
+        context?: Record<string, any>,
+        detection?: DepartmentDetection
     ): Promise<AgentResponse> {
-        logger.info({message, sessionId}, 'Processing construction agent message');
+        logger.info({ message, sessionId, detection }, 'Processing construction agent message');
         const lowerMessage = message.toLowerCase();
 
         try {
-            // Find the first intent that matches the message
-            const intent = this.intents.find(i =>
-                i.keywords.some(kw => lowerMessage.includes(kw))
-            );
+            // 1. Try to match by LLM action first
+            let intent = detection?.action ? this.intents.find(i => i.action === detection.action) : null;
+
+            // 2. Fallback to keyword matching
+            if (!intent) {
+                intent = this.intents.find(i =>
+                    i.keywords.some(kw => lowerMessage.includes(kw))
+                );
+            }
 
             let response: Partial<AgentResponse>;
 
             if (intent) {
-                logger.info(`Matched intent: ${intent.name}`);
+                logger.info(`Matched Construction intent: ${intent.name} (via ${detection?.action ? 'action' : 'keyword'})`);
                 response = await intent.handler.call(this, message, context);
             } else {
                 response = this.handleDefault();
@@ -130,14 +144,16 @@ export class ConstructionAgent extends BaseAgent {
 
             return {
                 sessionId,
+                department: 'construction',
                 ...response,
             } as AgentResponse;
 
         } catch (error) {
-            logger.error({error}, 'Error processing construction agent message');
+            logger.error({ error }, 'Error processing construction agent message');
             return {
-                message: `❌ An unexpected error occurred: ${error instanceof Error ? error.message : 'Unknown error'}`,
+                message: `❌ An unexpected error occurred: ${error instanceof Error ? error.message : 'Unknown error'} `,
                 sessionId,
+                department: 'construction',
             };
         }
     }
@@ -152,7 +168,7 @@ export class ConstructionAgent extends BaseAgent {
             budget: context?.budget,
         });
         return {
-            message: result.success ? `✅ ${result.data.message}` : `❌ Error: ${result.error}`,
+            message: result.success ? `✅ ${result.data.message} ` : `❌ Error: ${result.error} `,
             toolsUsed: ['project_tracker'],
             data: result.data,
         };
@@ -163,7 +179,7 @@ export class ConstructionAgent extends BaseAgent {
             action: 'list'
         });
         return {
-            message: result.success ? `📋 Found ${result.data.count} project(s).` : `❌ Error: ${result.error}`,
+            message: result.success ? `📋 Found ${result.data.count} project(s).` : `❌ Error: ${result.error} `,
             toolsUsed: ['project_tracker'],
             data: result.data,
         };
@@ -183,7 +199,7 @@ export class ConstructionAgent extends BaseAgent {
             materials
         });
         return {
-            message: result.success ? `💰 Total material cost: $${result.data.grandTotal.toFixed(2)}` : `❌ Error: ${result.error}`,
+            message: result.success ? `💰 Total material cost: $${result.data.grandTotal.toFixed(2)} ` : `❌ Error: ${result.error} `,
             toolsUsed: ['material_cost_calculator'],
             data: result.data,
         };
@@ -206,7 +222,7 @@ export class ConstructionAgent extends BaseAgent {
             startDate: context?.startDate,
         });
         return {
-            message: result.success ? `📅 Project '${result.data.projectName}' will take ${result.data.totalDuration} days.` : `❌ Error: ${result.error}`,
+            message: result.success ? `📅 Project '${result.data.projectName}' will take ${result.data.totalDuration} days.` : `❌ Error: ${result.error} `,
             toolsUsed: ['timeline_estimator'],
             data: result.data,
         };
@@ -218,7 +234,7 @@ export class ConstructionAgent extends BaseAgent {
             phase: context?.phase,
         });
         return {
-            message: result.success ? `✅ Safety checklist generated with ${result.data.totalItems} items.` : `❌ Error: ${result.error}`,
+            message: result.success ? `✅ Safety checklist generated with ${result.data.totalItems} items.` : `❌ Error: ${result.error} `,
             toolsUsed: ['safety_checklist_generator'],
             data: result.data,
         };
@@ -243,7 +259,7 @@ export class ConstructionAgent extends BaseAgent {
                     data: projects,
                 });
                 return {
-                    message: `📊 CSV exported: ${exportResult.data.filename}`,
+                    message: `📊 CSV exported: ${exportResult.data.filename} `,
                     toolsUsed: ['project_tracker', 'csv_generator'],
                     data: exportResult.data,
                 };
@@ -256,7 +272,7 @@ export class ConstructionAgent extends BaseAgent {
                     }],
                 });
                 return {
-                    message: `📊 Excel file exported: ${exportResult.data.filename}`,
+                    message: `📊 Excel file exported: ${exportResult.data.filename} `,
                     toolsUsed: ['project_tracker', 'excel_generator'],
                     data: exportResult.data,
                 };
@@ -274,11 +290,20 @@ export class ConstructionAgent extends BaseAgent {
                     },],
                 });
                 return {
-                    message: `📄 PDF generated: ${exportResult.data.filename}`,
+                    message: `📄 PDF generated: ${exportResult.data.filename} `,
                     toolsUsed: ['project_tracker', 'pdf_generator'],
                     data: exportResult.data,
                 };
         }
+    }
+
+    /**
+     * Returns a list of supported action IDs for LLM routing.
+     */
+    getSupportedActions(): string[] {
+        return this.intents
+            .map(i => i.action)
+            .filter((a): a is string => !!a);
     }
 
     private handleHelp(): Promise<Partial<AgentResponse>> {
@@ -289,7 +314,7 @@ export class ConstructionAgent extends BaseAgent {
 
     private handleDefault(): Partial<AgentResponse> {
         return {
-            message: `I can help with construction tasks. Try asking me to:\n` +
+            message: `I can help with construction tasks.Try asking me to: \n` +
                 `• "Create a new project"\n` +
                 `• "Show all projects"\n` +
                 `• "Calculate material costs"\n` +

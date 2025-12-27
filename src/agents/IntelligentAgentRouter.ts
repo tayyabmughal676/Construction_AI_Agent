@@ -1,6 +1,6 @@
-import {logger} from '../config/logger';
-import {geminiService} from '../services/gemini';
-import {AgentRegistry} from './AgentRegistry';
+import { logger } from '../config/logger';
+import { lmStudioService } from '../services/lmstudio';
+import { AgentRegistry } from './AgentRegistry';
 
 /**
  * Represents the result of an LLM-based intent detection.
@@ -10,6 +10,7 @@ export interface IntentDetectionResult {
     confidence: number;
     reasoning: string;
     action?: string; // e.g., 'CREATE_PROJECT'
+    parameters?: Record<string, any>; // Extracted entities (e.g., name, id)
 }
 
 /**
@@ -27,22 +28,22 @@ export class IntelligentAgentRouter {
      * @throws An error if the LLM service is unavailable or fails.
      */
     static async detectIntent(message: string): Promise<IntentDetectionResult> {
-        if (!geminiService.isAvailable()) {
-            throw new Error('LLM service is not available.');
+        if (!lmStudioService.isAvailable()) {
+            throw new Error('LM Studio service is not available.');
         }
 
-        logger.info('Using LLM to detect intent...');
+        logger.info('Using LM Studio to detect intent...');
         const registry = AgentRegistry.getInstance();
-        const availableDepartments = registry.getDepartments();
+        const agentSummaries = registry.getAgentSummaries();
 
-        if (availableDepartments.length === 0) {
+        if (agentSummaries.length === 0) {
             throw new Error('No agents are registered.');
         }
 
-        const detection = await geminiService.detectIntent(message, availableDepartments);
+        const detection = await lmStudioService.detectIntent(message, agentSummaries);
         logger.info({
             detection
-        }, 'LLM intent detection result');
+        }, 'LM Studio intent detection result');
 
         return detection;
     }

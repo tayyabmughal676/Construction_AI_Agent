@@ -1,4 +1,4 @@
-import {z} from 'zod';
+import { z } from 'zod';
 
 /**
  * A collection of reusable Zod schemas for validating common data structures
@@ -72,3 +72,19 @@ export const HRPolicyToolSchema = z.object({
     query: z.string().min(3, 'Query must be at least 3 characters long.'),
     policyArea: z.enum(['leave', 'benefits', 'conduct', 'wfh', 'all']).optional(),
 });
+
+/**
+ * Utility for common validation and normalization logic.
+ */
+export const Validator = {
+    email: {
+        validate: (email: string) => {
+            const result = z.string().email().safeParse(email);
+            return {
+                valid: result.success,
+                error: !result.success ? 'Invalid email format' : undefined
+            };
+        },
+        normalize: (email: string) => email.toLowerCase().trim(),
+    }
+};

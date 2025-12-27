@@ -1,5 +1,5 @@
-import type {AgentResponse, BaseTool, ToolResult} from './types';
-import {logger} from '../config/logger';
+import type { AgentResponse, BaseTool, ToolResult, DepartmentDetection } from './types';
+import { logger } from '../config/logger';
 
 /**
  * Abstract base class for all agents. It provides the core functionality for
@@ -79,17 +79,24 @@ export abstract class BaseAgent {
     }
 
     /**
+     * Returns a list of supported action identifiers for this agent.
+     */
+    abstract getSupportedActions(): string[];
+
+    /**
      * The core logic of the agent. This method must be implemented by each
      * concrete agent class to handle incoming messages.
      *
      * @param message The user's input message.
      * @param sessionId A unique identifier for the conversation session.
      * @param context Optional additional data relevant to the conversation.
+     * @param detection Optional result from the intent detection router.
      * @returns A promise that resolves to an agent response.
      */
     abstract processMessage(
         message: string,
         sessionId: string,
-        context?: Record<string, any>
+        context?: Record<string, any>,
+        detection?: DepartmentDetection
     ): Promise<AgentResponse>;
 }

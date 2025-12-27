@@ -1,4 +1,4 @@
-import {z} from 'zod';
+import { z } from 'zod';
 
 // Tool definition schema
 export const ToolSchema = z.object({
@@ -20,6 +20,18 @@ export interface BaseTool {
     description: string;
 
     execute(params: any): Promise<ToolResult>;
+}
+
+/**
+ * Represents the final detection result, including the method used.
+ */
+export interface DepartmentDetection {
+    department: string;
+    confidence: number;
+    reason: string;
+    method: 'llm' | 'keyword' | 'context';
+    action?: string;
+    parameters?: Record<string, any>;
 }
 
 // Agent message
@@ -47,4 +59,5 @@ export interface AgentResponse {
     toolsUsed?: string[];
     data?: any;
     sessionId: string;
+    department?: string;
 }

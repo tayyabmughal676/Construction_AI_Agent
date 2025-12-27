@@ -1,7 +1,7 @@
-import {Hono} from 'hono';
-import {env} from './config/env';
-import {logger} from './config/logger';
-import {redis} from './db/redis'; // Import the Redis client
+import { Hono } from 'hono';
+import { env } from './config/env';
+import { logger } from './config/logger';
+import { redis } from './db/redis'; // Import the Redis client
 // --- Middleware Imports ---
 import {
     corsMiddleware,
@@ -18,9 +18,10 @@ import agentRouter from './routes/agents';
 import workflowRouter from './routes/workflows';
 
 // --- Agent Registration ---
-import {AgentRegistry} from './agents/AgentRegistry';
-import {ConstructionAgent} from './agents/ConstructionAgent';
-import {HRAgent} from './agents/HRAgent';
+import { AgentRegistry } from './agents/AgentRegistry';
+import { ConstructionAgent } from './agents/ConstructionAgent';
+import { HRAgent } from './agents/HRAgent';
+import { ManufacturingAgent } from './agents/ManufacturingAgent';
 
 
 // --- Application Setup ---
@@ -30,6 +31,7 @@ logger.info('Initializing agent registry...');
 const registry = AgentRegistry.getInstance();
 registry.registerAgent('construction', new ConstructionAgent());
 registry.registerAgent('hr', new HRAgent());
+registry.registerAgent('manufacturing', new ManufacturingAgent());
 logger.info('✅ Agents registered successfully.');
 
 // 2. Initialize Redis Connection

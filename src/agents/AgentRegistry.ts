@@ -1,5 +1,5 @@
-import type {BaseAgent} from './BaseAgent';
-import {logger} from '../config/logger';
+import type { BaseAgent } from './BaseAgent';
+import { logger } from '../config/logger';
 
 /**
  * Central registry for all agents
@@ -56,6 +56,18 @@ export class AgentRegistry {
      */
     hasDepartment(department: string): boolean {
         return this.agents.has(department.toLowerCase());
+    }
+
+    /**
+     * Get summary of all agents (name, department, description)
+     */
+    getAgentSummaries(): { department: string; name: string; description: string; actions: string[] }[] {
+        return Array.from(this.agents.entries()).map(([department, agent]) => ({
+            department,
+            name: agent.name,
+            description: agent.description,
+            actions: agent.getSupportedActions(),
+        }));
     }
 
     /**

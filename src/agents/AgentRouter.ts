@@ -1,17 +1,7 @@
-import {AgentRegistry} from './AgentRegistry';
-import type {AgentResponse} from './types';
-import {logger} from '../config/logger';
-import {IntelligentAgentRouter} from './IntelligentAgentRouter';
-
-/**
- * Represents the final detection result, including the method used.
- */
-export interface DepartmentDetection {
-    department: string;
-    confidence: number;
-    reason: string;
-    method: 'llm' | 'keyword' | 'context';
-}
+import { AgentRegistry } from './AgentRegistry';
+import type { AgentResponse, DepartmentDetection } from './types';
+import { logger } from '../config/logger';
+import { IntelligentAgentRouter } from './IntelligentAgentRouter';
 
 /**
  * Configuration for the AgentRouter.
@@ -31,10 +21,6 @@ export interface RouterConfig {
 export class AgentRouter {
     private registry: AgentRegistry;
     private config: RouterConfig;
-    private departmentKeywords: Record<string, string[]> = {
-        construction: ['construction', 'project', 'site', 'blueprint', 'material'],
-        hr: ['hr', 'employee', 'leave', 'payroll', 'hiring'],
-    };
 
     constructor(config: RouterConfig = {}) {
         this.registry = AgentRegistry.getInstance();
@@ -50,7 +36,7 @@ export class AgentRouter {
      */
     async detectDepartment(
         message: string,
-        context ?: Record<string, any>
+        context?: Record<string, any>
     ): Promise<DepartmentDetection> {
         // 1. Explicit routing from context
         if (context?.department) {
@@ -75,11 +61,17 @@ export class AgentRouter {
                         reason: llmResult.reasoning,
                         method: 'llm',
                     };
+                } else {
+                    logger.warn({
+                        received: llmResult.department,
+                        available: this.registry.getDepartments()
+                    }, 'LLM returned a department that is not registered.');
                 }
             } catch (error) {
-                logger.warn({
-                    error
-                }, 'LLM detection failed. Falling back to keyword matching.');
+                logger.error({
+                    error: error instanceof Error ? { message: error.message, stack: error.stack } : error,
+                    message
+                }, 'Intelligent intent detection failed.');
             }
         }
 
@@ -94,7 +86,7 @@ export class AgentRouter {
     async route(
         message: string,
         sessionId: string,
-        context ?: Record<string, any>
+        context?: Record<string, any>
     ): Promise<AgentResponse & {
         detection: DepartmentDetection
     }> {
@@ -108,7 +100,7 @@ export class AgentRouter {
             const errorMsg = `No agent found for department: '${detection.department}'.`;
             logger.error(errorMsg);
             return {
-                message: `Sorry, I can't find an agent for the '${detection.department}' department.`,
+                message: `Sorry, I can't find an agent for the '${detection.department} ' department.`,
                 sessionId,
                 department: 'unknown',
                 detection: {
@@ -118,7 +110,13 @@ export class AgentRouter {
             };
         }
 
-        const response = await agent.processMessage(message, sessionId, context);
+        // Merge LLM-extracted parameters into context
+        const mergedContext = {
+            ...context,
+            ...(detection.parameters || {})
+        };
+
+        const response = await agent.processMessage(message, sessionId, mergedContext, detection);
         return {
             ...response,
             department: detection.department,
@@ -127,42 +125,49 @@ export class AgentRouter {
     }
 
     /**
-     * Fallback method to detect department using keyword matching.
+     * Fallback method to detect department using agent summaries and descriptions.
+     * This replaces the hardcoded keyword lists.
      */
     private detectDepartmentByKeywords(message: string): DepartmentDetection {
         const messageLower = message.toLowerCase();
+        const summaries = this.registry.getAgentSummaries();
         const defaultDepartment = this.config.defaultDepartment || 'construction';
 
         let bestMatch = {
             department: defaultDepartment,
-            score: 0
+            score: 0,
+            reason: 'No specific matches found; using default.'
         };
 
-        for (const [department, keywords] of Object.entries(this.departmentKeywords)) {
-            if (!this.registry.hasDepartment(department)) continue;
+        for (const agent of summaries) {
+            let score = 0;
+            const dept = agent.department.toLowerCase();
+            const desc = agent.description.toLowerCase();
 
-            const score = keywords.filter(kw => messageLower.includes(kw)).length;
+            // 1. Direct department name match (highest weight)
+            if (messageLower.includes(dept)) score += 10;
+
+            // 2. Specialized terminology match from description
+            const terms = desc.split(/[\s,.]+/).filter(t => t.length > 3);
+            for (const term of terms) {
+                if (messageLower.includes(term)) score += 2;
+            }
+
             if (score > bestMatch.score) {
                 bestMatch = {
-                    department,
-                    score
+                    department: dept,
+                    score,
+                    reason: `Matched specialized terminology for the ${agent.name} department.`
                 };
             }
         }
 
-        if (bestMatch.score > 0) {
-            return {
-                department: bestMatch.department,
-                confidence: Math.min(bestMatch.score / 3, 1.0), // Simple confidence
-                reason: `Matched ${bestMatch.score} keyword(s).`,
-                method: 'keyword',
-            };
-        }
+        const confidence = Math.min(bestMatch.score / 15, 1.0);
 
         return {
-            department: defaultDepartment,
-            confidence: 0.1,
-            reason: 'No specific keywords matched; using default department.',
+            department: bestMatch.department,
+            confidence: confidence > 0 ? confidence : 0.1,
+            reason: bestMatch.score > 0 ? bestMatch.reason : 'No agents identified; defaulting to Construction.',
             method: 'keyword',
         };
     }
@@ -172,9 +177,7 @@ export class AgentRouter {
         return {
             registeredDepartments: this.registry.getDepartments(),
             llmEnabled: this.config.llmEnabled,
-            keywordCounts: Object.fromEntries(
-                Object.entries(this.departmentKeywords).map(([dept, kw]) => [dept, kw.length])
-            ),
+            agentSummaries: this.registry.getAgentSummaries().length,
         };
     }
 
