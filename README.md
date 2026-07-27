@@ -106,7 +106,7 @@ curl -X POST http://localhost:3000/api/agents/chat \
 | Component | Technology | Why |
 |-----------|------------|-----|
 | **Runtime** | Bun.js | 3x faster than Node.js |
-| **API** | Hono.js | Edge-ready, 12KB footprint |
+| **API** | Elysia.js | TypeScript-first, high-performance web framework |
 | **Database** | MongoDB | Flexible schemas, horizontal scaling |
 | **Cache** | Redis | Sub-millisecond response times |
 | **AI/ML** | LangChain + LangGraph | Production-grade AI orchestration |

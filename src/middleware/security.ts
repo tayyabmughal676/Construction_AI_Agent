@@ -1,4 +1,4 @@
-import type { Context, Next } from 'hono';
+import type { Context } from 'elysia';
 import { logger } from '../config/logger';
 
 /**
@@ -63,102 +63,41 @@ export const rateLimiter = (options: {
     const windowMs = options.windowMs || 15 * 60 * 1000; // 15 minutes
     const message = options.message || 'Too many requests, please try again later';
 
-    return async (c: Context, next: Next) => {
+    return async (c: Context) => {
         // Get client IP
-        const forwardedFor = c.req.header('x-forwarded-for');
-        const realIp = c.req.header('x-real-ip');
+        const forwardedFor = c.headers['x-forwarded-for'];
+        const realIp = c.headers['x-real-ip'];
         const ip = forwardedFor?.split(',')[0]?.trim() || realIp || 'unknown';
 
         const key = `ratelimit:${ip}`;
 
         // Skip rate limiting if disabled in config
         if (process.env.ENABLE_RATE_LIMIT === 'false') {
-            await next();
             return;
         }
 
         const result = rateLimitStore.check(key, limit, windowMs);
 
         // Set rate limit headers
-        c.header('X-RateLimit-Limit', limit.toString());
-        c.header('X-RateLimit-Remaining', result.remaining.toString());
-        c.header('X-RateLimit-Reset', new Date(result.resetTime).toISOString());
+        c.set.headers['X-RateLimit-Limit'] = limit.toString();
+        c.set.headers['X-RateLimit-Remaining'] = result.remaining.toString();
+        c.set.headers['X-RateLimit-Reset'] = new Date(result.resetTime).toISOString();
 
         if (!result.allowed) {
             logger.warn({
                 ip,
-                path: c.req.path,
-                method: c.req.method,
+                path: c.path,
+                method: c.request.method,
             }, 'Rate limit exceeded');
 
-            return c.json({
+            c.set.status = 429;
+            return {
                 error: message,
                 retryAfter: Math.ceil((result.resetTime - Date.now()) / 1000),
-            }, 429);
+            };
         }
-
-        await next();
     };
 };
-
-/**
- * Input Sanitization Middleware
- * Prevents XSS and injection attacks
- */
-export const sanitizeInput = async (c: Context, next: Next) => {
-    try {
-        const contentType = c.req.header('content-type');
-
-        if (contentType?.includes('application/json')) {
-            const body = await c.req.json();
-            const sanitized = sanitizeObject(body);
-
-            // Replace request body with sanitized version
-            c.req.raw = new Request(c.req.raw, {
-                body: JSON.stringify(sanitized),
-            });
-        }
-    } catch (error) {
-        logger.error({ error }, 'Error sanitizing input');
-    }
-
-    await next();
-};
-
-/**
- * Recursively sanitize object properties
- */
-function sanitizeObject(obj: any): any {
-    if (typeof obj === 'string') {
-        return sanitizeString(obj);
-    }
-
-    if (Array.isArray(obj)) {
-        return obj.map(item => sanitizeObject(item));
-    }
-
-    if (obj && typeof obj === 'object') {
-        const sanitized: any = {};
-        for (const [key, value] of Object.entries(obj)) {
-            sanitized[key] = sanitizeObject(value);
-        }
-        return sanitized;
-    }
-
-    return obj;
-}
-
-/**
- * Sanitize string to prevent XSS
- */
-function sanitizeString(str: string): string {
-    return str
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#x27;')
-        .replace(/\//g, '&#x2F;');
-}
 
 /**
  * CORS Middleware
@@ -174,29 +113,28 @@ export const corsMiddleware = (options: {
             ? [options.origin]
             : ['*'];
 
-    return async (c: Context, next: Next) => {
-        const origin = c.req.header('origin');
+    return async (c: Context) => {
+        const origin = c.headers.origin;
 
         // Check if origin is allowed
         if (origin && (allowedOrigins.includes('*') || allowedOrigins.includes(origin))) {
-            c.header('Access-Control-Allow-Origin', origin);
+            c.set.headers['Access-Control-Allow-Origin'] = origin;
         } else if (allowedOrigins.includes('*')) {
-            c.header('Access-Control-Allow-Origin', '*');
+            c.set.headers['Access-Control-Allow-Origin'] = '*';
         }
 
-        c.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-        c.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+        c.set.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS';
+        c.set.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Requested-With';
 
         if (options.credentials) {
-            c.header('Access-Control-Allow-Credentials', 'true');
+            c.set.headers['Access-Control-Allow-Credentials'] = 'true';
         }
 
         // Handle preflight requests
-        if (c.req.method === 'OPTIONS') {
-            return new Response('', { status: 204 });
+        if (c.request.method === 'OPTIONS') {
+            c.set.status = 204;
+            return '';
         }
-
-        await next();
     };
 };
 
@@ -204,31 +142,29 @@ export const corsMiddleware = (options: {
  * Security Headers Middleware
  * Adds security-related HTTP headers
  */
-export const securityHeaders = async (c: Context, next: Next) => {
+export const securityHeaders = async (c: Context) => {
     // Prevent clickjacking
-    c.header('X-Frame-Options', 'DENY');
+    c.set.headers['X-Frame-Options'] = 'DENY';
 
     // Prevent MIME type sniffing
-    c.header('X-Content-Type-Options', 'nosniff');
+    c.set.headers['X-Content-Type-Options'] = 'nosniff';
 
     // Enable XSS protection
-    c.header('X-XSS-Protection', '1; mode=block');
+    c.set.headers['X-XSS-Protection'] = '1; mode=block';
 
     // Referrer policy
-    c.header('Referrer-Policy', 'strict-origin-when-cross-origin');
+    c.set.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin';
 
     // Content Security Policy
-    c.header('Content-Security-Policy', "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'");
+    c.set.headers['Content-Security-Policy'] = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'";
 
     // Strict Transport Security (HTTPS only)
-    if (c.req.url.startsWith('https://')) {
-        c.header('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+    if (c.request.url.startsWith('https://')) {
+        c.set.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains';
     }
 
     // Permissions Policy
-    c.header('Permissions-Policy', 'geolocation=(), microphone=(), camera=()');
-
-    await next();
+    c.set.headers['Permissions-Policy'] = 'geolocation=(), microphone=(), camera=()';
 };
 
 /**
@@ -242,30 +178,30 @@ export const validateRequest = (options: {
     const maxBodySize = options.maxBodySize || 1024 * 1024; // 1MB default
     const allowedMethods = options.allowedMethods || ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'];
 
-    return async (c: Context, next: Next) => {
+    return async (c: Context) => {
         // Check method
-        if (!allowedMethods.includes(c.req.method)) {
+        if (!allowedMethods.includes(c.request.method)) {
             logger.warn({
-                method: c.req.method,
-                path: c.req.path,
+                method: c.request.method,
+                path: c.path,
             }, 'Method not allowed');
 
-            return c.json({ error: 'Method not allowed' }, 405);
+            c.set.status = 405;
+            return { error: 'Method not allowed' };
         }
 
         // Check content length
-        const contentLength = c.req.header('content-length');
+        const contentLength = c.headers['content-length'];
         if (contentLength && parseInt(contentLength) > maxBodySize) {
             logger.warn({
                 contentLength,
                 maxBodySize,
-                path: c.req.path,
+                path: c.path,
             }, 'Request body too large');
 
-            return c.json({ error: 'Request body too large' }, 413);
+            c.set.status = 413;
+            return { error: 'Request body too large' };
         }
-
-        await next();
     };
 };
 
@@ -277,26 +213,26 @@ export const ipFilter = (options: {
     whitelist?: string[];
     blacklist?: string[];
 } = {}) => {
-    return async (c: Context, next: Next) => {
-        const forwardedFor = c.req.header('x-forwarded-for');
-        const realIp = c.req.header('x-real-ip');
+    return async (c: Context) => {
+        const forwardedFor = c.headers['x-forwarded-for'];
+        const realIp = c.headers['x-real-ip'];
         const ip = forwardedFor?.split(',')[0]?.trim() || realIp || 'unknown';
 
         // Check blacklist first
         if (options.blacklist && options.blacklist.includes(ip)) {
-            logger.warn({ ip, path: c.req.path }, 'IP blocked (blacklist)');
-            return c.json({ error: 'Access denied' }, 403);
+            logger.warn({ ip, path: c.path }, 'IP blocked (blacklist)');
+            c.set.status = 403;
+            return { error: 'Access denied' };
         }
 
         // Check whitelist if configured
         if (options.whitelist && options.whitelist.length > 0) {
             if (!options.whitelist.includes(ip)) {
-                logger.warn({ ip, path: c.req.path }, 'IP not in whitelist');
-                return c.json({ error: 'Access denied' }, 403);
+                logger.warn({ ip, path: c.path }, 'IP not in whitelist');
+                c.set.status = 403;
+                return { error: 'Access denied' };
             }
         }
-
-        await next();
     };
 };
 
@@ -304,23 +240,12 @@ export const ipFilter = (options: {
  * Request Logger Middleware
  * Logs all incoming requests for security monitoring
  */
-export const requestLogger = async (c: Context, next: Next) => {
-    const start = Date.now();
-    const forwardedFor = c.req.header('x-forwarded-for');
-    const realIp = c.req.header('x-real-ip');
-    const ip = forwardedFor?.split(',')[0]?.trim() || realIp || 'unknown';
-
-    await next();
-
-    const duration = Date.now() - start;
-
+export const requestLogger = async (c: Context) => {
     logger.info({
-        method: c.req.method,
-        path: c.req.path,
-        status: c.res.status,
-        duration,
-        ip,
-        userAgent: c.req.header('user-agent'),
+        method: c.request.method,
+        path: c.path,
+        ip: c.headers['x-forwarded-for']?.split(',')[0]?.trim() || c.headers['x-real-ip'] || 'unknown',
+        userAgent: c.headers['user-agent'],
     }, 'Request completed');
 };
 
@@ -328,24 +253,7 @@ export const requestLogger = async (c: Context, next: Next) => {
  * Error Handler Middleware
  * Catches and handles errors securely
  */
-export const errorHandler = async (c: Context, next: Next) => {
-    try {
-        await next();
-    } catch (error) {
-        logger.error({
-            error: error instanceof Error ? error.message : 'Unknown error',
-            stack: error instanceof Error ? error.stack : undefined,
-            path: c.req.path,
-            method: c.req.method,
-        }, 'Request error');
-
-        // Don't expose internal errors to clients
-        return c.json({
-            error: 'Internal server error',
-            message: process.env.NODE_ENV === 'development' && error instanceof Error
-                ? error.message
-                : 'An unexpected error occurred',
-        }, 500);
-    }
+export const errorHandler = async (c: Context) => {
+    // Placeholder, since Elysia has built-in error handling
 };
 

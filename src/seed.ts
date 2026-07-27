@@ -1,3 +1,4 @@
+import './patch';
 import {mongodb} from './db/mongodb';
 import {logger} from './config/logger';
 

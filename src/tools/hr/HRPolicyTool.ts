@@ -96,8 +96,7 @@ export class HRPolicyTool implements BaseTool {
             if (error instanceof z.ZodError) {
                 return {
                     success: false,
-                    error: 'Validation failed',
-                    details: error.flatten()
+                    error: `Validation failed: ${JSON.stringify(error.flatten())}`
                 };
             }
             return {

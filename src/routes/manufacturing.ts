@@ -1,8 +1,8 @@
-import { Hono } from 'hono';
+import { Elysia } from 'elysia';
 import { AgentRegistry } from '../agents/AgentRegistry';
 import { logger } from '../config/logger';
 
-const manufacturingRouter = new Hono();
+const manufacturingRouter = new Elysia();
 
 /**
  * GET /api/manufacturing/inventory
@@ -14,7 +14,8 @@ manufacturingRouter.get('/inventory', async (c) => {
         const mfgAgent = registry.getAgent('manufacturing');
 
         if (!mfgAgent) {
-            return c.json({ error: 'Manufacturing Agent not found' }, 500);
+            c.set.status = 500;
+            return { error: 'Manufacturing Agent not found' };
         }
 
         const result = await mfgAgent.executeTool('inventory_tracker', {
@@ -22,7 +23,8 @@ manufacturingRouter.get('/inventory', async (c) => {
         });
 
         if (!result.success) {
-            return c.json({ error: result.error }, 400);
+            c.set.status = 400;
+            return { error: result.error };
         }
 
         // Map to frontend format
@@ -34,10 +36,11 @@ manufacturingRouter.get('/inventory', async (c) => {
             location: item.location || 'Warehouse A'
         }));
 
-        return c.json({ inventory });
+        return { inventory };
     } catch (error) {
         logger.error({ error }, 'Error in GET /api/manufacturing/inventory');
-        return c.json({ error: 'Internal server error' }, 500);
+        c.set.status = 500;
+        return { error: 'Internal server error' };
     }
 });
 
@@ -51,7 +54,8 @@ manufacturingRouter.get('/stats', async (c) => {
         const mfgAgent = registry.getAgent('manufacturing');
 
         if (!mfgAgent) {
-            return c.json({ error: 'Manufacturing Agent not found' }, 500);
+            c.set.status = 500;
+            return { error: 'Manufacturing Agent not found' };
         }
 
         // Gather metrics from multiple tools
@@ -61,14 +65,15 @@ manufacturingRouter.get('/stats', async (c) => {
         const summary = runsResult.data?.summary || {};
         const quality = qualityResult.data || {};
 
-        return c.json({
+        return {
             oee: "92.4%", // Calculated or derived
             activeLines: `${summary.inProgress || 0}/14`,
             qcPassRate: quality.overallPassRate || "99.2%"
-        });
+        };
     } catch (error) {
         logger.error({ error }, 'Error in GET /api/manufacturing/stats');
-        return c.json({ error: 'Internal server error' }, 500);
+        c.set.status = 500;
+        return { error: 'Internal server error' };
     }
 });
 

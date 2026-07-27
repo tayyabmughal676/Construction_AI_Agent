@@ -1,3 +1,4 @@
+import './src/patch';
 import app from './src/app';
 import { env } from './src/config/env';
 import { logger } from './src/config/logger';
@@ -29,18 +30,16 @@ async function startServer() {
         const { WorkflowRegistry } = await import('./src/workflows/WorkflowRegistry');
         WorkflowRegistry.initialize();
 
-        const server = Bun.serve({
-            port: parseInt(env.PORT),
-            fetch: app.fetch,
-        });
+        const port = parseInt(env.PORT);
+        await app.listen(port);
 
         logger.info('🎉 Multi-Agent Enterprise Orchestrator Ready!');
-        logger.info(`🚀 Server running on http://localhost:${server.port}`);
+        logger.info(`🚀 Server running on http://localhost:${port}`);
         logger.info(`📊 Environment: ${env.NODE_ENV}`);
-        logger.info(`🏥 Health check: http://localhost:${server.port}/health`);
+        logger.info(`🏥 Health check: http://localhost:${port}/health`);
         logger.info('');
         logger.info('✅ Production-Ready Infrastructure initialized');
-        logger.info('✅ Hono server running');
+        logger.info('✅ Elysia server running');
         logger.info('✅ Multi-Agent Orchestrator active');
         logger.info('✅ LangGraph Workflows registered');
         logger.info('✅ MongoDB & Redis persistence online');

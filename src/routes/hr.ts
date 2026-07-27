@@ -1,8 +1,8 @@
-import { Hono } from 'hono';
+import { Elysia } from 'elysia';
 import { AgentRegistry } from '../agents/AgentRegistry';
 import { logger } from '../config/logger';
 
-const hrRouter = new Hono();
+const hrRouter = new Elysia();
 
 /**
  * GET /api/hr/employees
@@ -14,7 +14,8 @@ hrRouter.get('/employees', async (c) => {
         const hrAgent = registry.getAgent('hr');
 
         if (!hrAgent) {
-            return c.json({ error: 'HR Agent not found' }, 500);
+            c.set.status = 500;
+            return { error: 'HR Agent not found' };
         }
 
         const result = await hrAgent.executeTool('employee_directory', {
@@ -23,7 +24,8 @@ hrRouter.get('/employees', async (c) => {
         });
 
         if (!result.success) {
-            return c.json({ error: result.error }, 400);
+            c.set.status = 400;
+            return { error: result.error };
         }
 
         // Map internal data to the format requested by frontend
@@ -35,10 +37,11 @@ hrRouter.get('/employees', async (c) => {
             status: emp.status || 'Active'
         }));
 
-        return c.json({ employees });
+        return { employees };
     } catch (error) {
         logger.error({ error }, 'Error in GET /api/hr/employees');
-        return c.json({ error: 'Internal server error' }, 500);
+        c.set.status = 500;
+        return { error: 'Internal server error' };
     }
 });
 

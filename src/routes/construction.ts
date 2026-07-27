@@ -1,4 +1,4 @@
-import { Hono } from 'hono';
+import { Elysia } from 'elysia';
 import { z } from 'zod';
 import { ConstructionAgent } from '../agents/ConstructionAgent';
 import { logger } from '../config/logger';
@@ -6,7 +6,7 @@ import { randomUUID } from 'crypto';
 import { ChatRequestSchema, ToolExecutionRequestSchema } from '../utils/validators';
 import { AgentRegistry } from '../agents/AgentRegistry'; // Added import for AgentRegistry
 
-const constructionRouter = new Hono();
+const constructionRouter = new Elysia();
 
 /**
  * GET /api/construction/projects
@@ -18,7 +18,8 @@ constructionRouter.get('/projects', async (c) => {
         const agent = registry.getAgent('construction');
 
         if (!agent) {
-            return c.json({ error: 'Construction Agent not found' }, 500);
+            c.set.status = 500;
+            return { error: 'Construction Agent not found' };
         }
 
         const result = await agent.executeTool('project_tracker', {
@@ -26,7 +27,8 @@ constructionRouter.get('/projects', async (c) => {
         });
 
         if (!result.success) {
-            return c.json({ error: result.error }, 400);
+            c.set.status = 400;
+            return { error: result.error };
         }
 
         // Map to frontend format
@@ -39,10 +41,11 @@ constructionRouter.get('/projects', async (c) => {
             status: p.status === 'active' ? 'On Track' : p.status === 'completed' ? 'Finished' : 'Planned'
         }));
 
-        return c.json({ projects });
+        return { projects };
     } catch (error) {
         logger.error({ error }, 'Error in GET /api/construction/projects');
-        return c.json({ error: 'Internal server error' }, 500);
+        c.set.status = 500;
+        return { error: 'Internal server error' };
     }
 });
 
@@ -55,7 +58,7 @@ const agent = new ConstructionAgent();
  */
 constructionRouter.post('/chat', async (c) => {
     try {
-        const body = await c.req.json();
+        const body = await c.request.json();
         const {
             message,
             sessionId,
@@ -68,20 +71,22 @@ constructionRouter.post('/chat', async (c) => {
             context
         );
 
-        return c.json(response);
+        return response;
     } catch (error) {
         logger.error({
             error
         }, 'Error in construction chat endpoint');
         if (error instanceof z.ZodError) {
-            return c.json({
+            c.set.status = 400;
+            return {
                 error: 'Validation failed',
                 details: error.flatten()
-            }, 400);
+            };
         }
-        return c.json({
+        c.set.status = 500;
+        return {
             error: 'An internal error occurred'
-        }, 500);
+        };
     }
 });
 
@@ -89,14 +94,14 @@ constructionRouter.post('/chat', async (c) => {
  * Provides a detailed list of the agent's capabilities.
  */
 constructionRouter.get('/capabilities', (c) => {
-    return c.json({
+    return {
         department: agent.name,
         description: agent.description,
         tools: agent.getTools().map(tool => ({
             name: tool.name,
             description: tool.description,
         })),
-    });
+    };
 });
 
 /**
@@ -104,8 +109,8 @@ constructionRouter.get('/capabilities', (c) => {
  */
 constructionRouter.post('/tools/:toolName', async (c) => {
     try {
-        const toolName = c.req.param('toolName');
-        const params = await c.req.json();
+        const toolName = c.params.toolName;
+        const params = await c.request.json();
 
         const {
             params: validatedParams
@@ -117,23 +122,26 @@ constructionRouter.post('/tools/:toolName', async (c) => {
         const result = await agent.executeTool(toolName, validatedParams);
 
         if (!result.success) {
-            return c.json(result, 400);
+            c.set.status = 400;
+            return result;
         }
-        return c.json(result);
+        return result;
     } catch (error) {
         logger.error({
             error
         }, 'Error executing tool directly');
         if (error instanceof z.ZodError) {
-            return c.json({
+            c.set.status = 400;
+            return {
                 error: 'Validation failed',
                 details: error.flatten()
-            }, 400);
+            };
         }
-        return c.json({
+        c.set.status = 500;
+        return {
             success: false,
             error: 'An internal error occurred'
-        }, 500);
+        };
     }
 });
 

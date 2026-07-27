@@ -1,11 +1,11 @@
-import { Hono } from 'hono';
+import { Elysia } from 'elysia';
 import { z } from 'zod';
 import { AgentRouter } from '../agents/AgentRouter';
 import { logger } from '../config/logger';
 import { randomUUID } from 'crypto';
 import { RoutedChatRequestSchema } from '../utils/validators';
 
-const agentApiRouter = new Hono();
+const agentApiRouter = new Elysia();
 const agentRouter = new AgentRouter();
 
 // --- Endpoints ---
@@ -15,7 +15,7 @@ const agentRouter = new AgentRouter();
  */
 agentApiRouter.post('/chat', async (c) => {
     try {
-        const body = await c.req.json();
+        const body = await c.request.json();
         const {
             message,
             sessionId,
@@ -34,20 +34,22 @@ agentApiRouter.post('/chat', async (c) => {
             routingContext
         );
 
-        return c.json(response);
+        return response;
     } catch (error) {
         logger.error({
             error
         }, 'Error in unified chat endpoint');
         if (error instanceof z.ZodError) {
-            return c.json({
+            c.set.status = 400;
+            return {
                 error: 'Validation failed',
                 details: error.flatten()
-            }, 400);
+            };
         }
-        return c.json({
+        c.set.status = 500;
+        return {
             error: 'An internal error occurred'
-        }, 500);
+        };
     }
 });
 
@@ -56,10 +58,10 @@ agentApiRouter.post('/chat', async (c) => {
  */
 agentApiRouter.get('/capabilities', (c) => {
     const capabilities = agentRouter.getAllCapabilities();
-    return c.json({
+    return {
         registered_departments: Object.keys(capabilities),
         capabilities,
-    });
+    };
 });
 
 export default agentApiRouter;
