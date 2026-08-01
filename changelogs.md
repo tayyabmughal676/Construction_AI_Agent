@@ -4,6 +4,41 @@ All notable changes to the Multi-Agent Enterprise Orchestrator will be documente
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to Semantic Versioning.
 
+## [2.0.0-phase1] - 2026-08-01
+
+### Added
+- **Animated Toast Notification System (`Toast.tsx`):** Added a floating, color-coded alert system using `framer-motion` for instant visual feedback on creating, updating, or deleting records, executing workflows, starting voice input, and managing chat threads.
+- **🎙️ Voice-to-Text Speech Input:** Added a hands-free speech input button in the chat input bar utilizing the Web Speech API with active pulsing indicators.
+- **💬 Multi-Thread Chat Sessions:** Added a sidebar conversation thread switcher allowing users to create (`+ New`), switch, rename, delete, and persist multiple chat threads in `localStorage`.
+- **📥 In-Chat File Downloads:** Created public file streaming endpoint `/api/files/:type/:filename` and rendered interactive **📥 Download** cards in chat for generated CSV, Excel, and PDF files.
+- **👥 Full Operational HR Hub (`HR.tsx`):** Added complete CRUD UI (Add, Edit, Delete, View Details Modal) displaying Employee IDs (`EMP001`), positions, salaries, and statuses.
+- **🏗️ Full Operational Site Terminal (`Construction.tsx`):** Added complete CRUD UI (Add, Edit, Delete, View Details Modal) displaying Project IDs (`PRJ-001`), site locations, budgets, progress bars, and statuses.
+- **🏭 Full Operational Fabrication Node (`Manufacturing.tsx`):** Added complete CRUD UI (Add, Edit, Delete, View Details Modal) displaying Component SKUs (`STEEL-001`), stock levels, unit costs, reorder thresholds, and OEE metrics.
+- **⚡ MongoDB Compound Text Indexing:** Added automatic text indexes on `employees`, `projects`, and `inventory` collections for sub-5ms search speeds.
+- **📄 PDF Auto-Pagination & Header Repetition:** Updated `PDFGeneratorTool.ts` to perform automatic page breaks and header repetition when table data overflows single-page bounds.
+- **🔁 Groq HTTP 429 Retry Backoff:** Added 3-attempt exponential backoff retry logic in `GroqService.createCompletion` to handle rate limits and quota limits gracefully.
+- **🌱 Enterprise Seed Dataset Refresh:** Updated `src/seed.ts` to seed 10 employees, 6 construction projects, 8 manufacturing items, and hashed admin/user accounts.
+
+### Fixed
+- **LangGraph Workflow Wizard (6/6 Fixes):** Resolved tool name mismatches in `projectKickoff.ts` (`material_cost_calculator`), safe employee lookups in `employeeOffboarding.ts`, and PDF array content parameters in `executiveReport.ts`. All 6 workflows now return `success: true`.
+
+---
+
+## [1.3.0] - 2026-08-01
+
+### Added
+- **Unified Intelligence Terminal UI:** Redesigned frontend `App.tsx` into a full-screen ChatGPT-style experience with collapsible sidebar navigation, department gradient theme styling, and auto-resizing textarea.
+- **`@`-Mention Tool Autocomplete:** Added interactive tool selection in the chat input. Typing `@` triggers a floating, department-grouped tool picker with keyboard navigation (`↑`/`↓`/`Enter`/`Esc`) to insert tool mentions.
+- **Live Capabilities Sync:** Integrated `GET /api/agents/capabilities` into frontend welcome state to display live capability cards and tool counts per agent.
+- **Unified Router Fallback:** Added low-confidence (<0.4) router intercept in `AgentRouter.ts` that returns a multi-department capabilities summary when generic greetings ("hi", "hello") or vague queries are received.
+- **Interactive LangGraph Workflow Wizard:** Rebuilt `Workflow.tsx` with a 4-step modal wizard (**Configure → Confirm → Execute → Results**) supporting all 6 enterprise workflows.
+
+### Fixed
+- **HR Intent Expansion:** Expanded `HRAgent.ts` from 3 to 9 intents (`ONBOARD_EMPLOYEE`, `MANAGE_LEAVE`, `TRACK_PERFORMANCE`, CSV/Excel/PDF exports).
+- **Manufacturing Intent Expansion:** Added `QUALITY_METRICS` and CSV/Excel/PDF export intents to `ManufacturingAgent.ts`.
+- **Employee Directory Search:** Fixed `HRAgent.ts` and `EmployeeDirectoryTool.ts` to strip command prefixes and perform multi-word regex OR searches (e.g. "John Doe").
+- **Zod Schema Mismatches:** Normalized `leaveType` input in leave management and aligned performance tracker tool action identifiers (`summary`).
+
 ---
 
 ## [Unreleased]

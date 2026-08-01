@@ -40,10 +40,12 @@ const estimateCostsNode = async (state: LangGraphState) => {
     const registry = AgentRegistry.getInstance();
     const agent = registry.getAgent('construction');
 
-    const result = await agent!.executeTool('material_calculator', {
-        projectType: state.data.projectType || 'commercial',
-        squareFootage: state.data.squareFootage || 10000,
-        qualityTier: state.data.qualityTier || 'standard'
+    const result = await agent!.executeTool('material_cost_calculator', {
+        materials: [
+            { material: 'concrete', quantity: 50 },
+            { material: 'steel', quantity: 10 },
+            { material: 'lumber', quantity: 5 }
+        ]
     });
 
     if (result.success) {
@@ -60,16 +62,15 @@ const generateChecklistNode = async (state: LangGraphState) => {
     const registry = AgentRegistry.getInstance();
     const agent = registry.getAgent('construction');
 
-    const result = await agent!.executeTool('safety_checklist', {
-        action: 'generate',
-        projectPhase: 'pre_construction',
-        projectType: state.data.projectType || 'commercial'
+    const result = await agent!.executeTool('safety_checklist_generator', {
+        projectType: state.data.projectType || 'commercial',
+        phase: 'planning'
     });
 
     if (result.success) {
         return {
-            data: { ...state.data, checklistId: result.data.checklistId },
-            results: [{ step: "Generate Checklist", checklistId: result.data.checklistId }]
+            data: { ...state.data, checklistId: result.data.checklistId || 'CHK-PRECON' },
+            results: [{ step: "Generate Checklist", checklistId: result.data.checklistId || 'CHK-PRECON' }]
         };
     }
     return { errors: [result.error] };

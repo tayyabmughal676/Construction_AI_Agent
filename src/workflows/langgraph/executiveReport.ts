@@ -48,20 +48,37 @@ const gatherDataNode = async (state: LangGraphState) => {
 const generatePDFNode = async (state: LangGraphState) => {
     logger.info("LangGraph: Generating PDF report...");
     
+    const reportData = state.data.reportData || { activeProjects: 0, qcPassRate: 'N/A', totalEmployees: 0 };
+
     const pdfTool = new PDFGeneratorTool();
     const result = await pdfTool.execute({
         title: "Monthly Executive Report",
-        content: `
-        Active Construction Projects: ${state.data.reportData.activeProjects}
-        Manufacturing QC Pass Rate: ${state.data.reportData.qcPassRate}
-        Total Workforce Headcount: ${state.data.reportData.totalEmployees}
-        `.trim()
+        filename: state.data.filename || "monthly_executive_report",
+        content: [
+            {
+                type: 'heading',
+                text: 'Executive Summary KPI Metrics',
+                level: 1
+            },
+            {
+                type: 'paragraph',
+                text: `Active Construction Projects: ${reportData.activeProjects}`
+            },
+            {
+                type: 'paragraph',
+                text: `Manufacturing QC Pass Rate: ${reportData.qcPassRate}`
+            },
+            {
+                type: 'paragraph',
+                text: `Total Workforce Headcount: ${reportData.totalEmployees}`
+            }
+        ]
     });
 
     if (result.success) {
         return {
-            data: { ...state.data, pdfPath: result.data.filePath },
-            results: [{ step: "Generate PDF", filePath: result.data.filePath }]
+            data: { ...state.data, pdfPath: result.data.filepath, downloadUrl: `/api/files/pdfs/${result.data.filename}` },
+            results: [{ step: "Generate PDF", filePath: result.data.filepath, downloadUrl: `/api/files/pdfs/${result.data.filename}` }]
         };
     }
     return { errors: [result.error] };

@@ -12,20 +12,19 @@ describe('HR Agent', () => {
         const result = await agent.executeTool('employee_directory', {
             action: 'list'
         });
-        
+
         expect(result.success).toBe(true);
         expect(result.data.employees).toBeInstanceOf(Array);
     });
 
     it('should successfully execute onboarding checklist generation', async () => {
         const result = await agent.executeTool('onboarding_checklist', {
-            action: 'generate',
-            employeeId: 'EMP-1234',
+            employeeId: 'EMP001',
             role: 'Developer',
             department: 'Engineering'
         });
 
         expect(result.success).toBe(true);
-        expect(result.data.checklistId).toBeDefined();
+        expect(result.data.checklist).toBeDefined();
     });
 });

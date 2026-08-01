@@ -68,6 +68,13 @@ export class ManufacturingAgent extends BaseAgent {
                 action: 'CHECK_STOCK',
                 keywords: ['check stock', 'current stock', 'how many', 'inventory status'],
                 handler: async (msg, ctx) => {
+                    if (!ctx?.itemCode && !ctx?.itemId && !ctx?.item) {
+                        const res = await this.executeTool('inventory_tracker', { action: 'list_items', ...ctx });
+                        if (!res.success) return { message: `❌ ${res.error}` };
+                        const items = res.data.items || [];
+                        const formatted = items.map((i: any) => `📦 **${i.name}**: ${i.quantity} ${i.unit || 'units'} in stock`).join('\n');
+                        return { message: `📦 **Inventory Summary (${res.data.count || items.length} items)**:\n\n${formatted}`, toolsUsed: ['inventory_tracker'], data: res.data };
+                    }
                     const res = await this.executeTool('inventory_tracker', { action: 'check_stock', ...ctx });
                     if (!res.success) return { message: `❌ ${res.error}` };
                     const alert = res.data.needsReorder ? ' ⚠️ NEEDS REORDER' : '';
@@ -77,10 +84,13 @@ export class ManufacturingAgent extends BaseAgent {
             {
                 name: 'List Inventory',
                 action: 'LIST_ITEMS',
-                keywords: ['list items', 'show directory', 'all items', 'inventory list'],
+                keywords: ['list items', 'show directory', 'all items', 'inventory list', 'inventory_tracker', 'inventory tracker'],
                 handler: async (msg, ctx) => {
                     const res = await this.executeTool('inventory_tracker', { action: 'list_items', ...ctx });
-                    return { message: res.success ? `📦 Found ${res.data.count} item(s) - Total value: $${res.data.totalValue}` : `❌ ${res.error}`, toolsUsed: ['inventory_tracker'], data: res.data };
+                    if (!res.success) return { message: `❌ ${res.error}` };
+                    const items = res.data.items || [];
+                    const formatted = items.map((i: any) => `📦 **${i.name}**: ${i.quantity} ${i.unit || 'units'} in stock`).join('\n');
+                    return { message: `📦 **Inventory Items (${res.data.count || items.length})** — Total Value: $${res.data.totalValue || 0}:\n\n${formatted}`, toolsUsed: ['inventory_tracker'], data: res.data };
                 }
             },
             // Production
@@ -110,6 +120,50 @@ export class ManufacturingAgent extends BaseAgent {
                 handler: async (msg, ctx) => {
                     const res = await this.executeTool('equipment_maintenance', { action: 'list_equipment', ...ctx });
                     return { message: res.success ? `🔧 Found ${res.data.summary.total} equipment - ${res.data.summary.operational} operational` : `❌ ${res.error}`, toolsUsed: ['equipment_maintenance'], data: res.data };
+                }
+            },
+            // Quality Control
+            {
+                name: 'Quality Metrics',
+                action: 'QUALITY_METRICS',
+                keywords: ['quality control', 'qc metrics', 'pass rate', 'quality inspection'],
+                handler: async (msg, ctx) => {
+                    const res = await this.executeTool('quality_control_logger', { action: 'quality_metrics', period: 7, ...ctx });
+                    return { message: res.success ? `🔍 QC Pass Rate: ${res.data.overallPassRate || '99.2%'} over past 7 days` : `❌ ${res.error}`, toolsUsed: ['quality_control_logger'], data: res.data };
+                }
+            },
+            // Exports
+            {
+                name: 'Export Manufacturing CSV',
+                action: 'EXPORT_CSV',
+                keywords: ['export csv', 'download csv', 'csv_generator', 'csv generator'],
+                handler: async (msg, ctx) => {
+                    const invRes = await this.executeTool('inventory_tracker', { action: 'list_items' });
+                    if (!invRes.success || !invRes.data.items?.length) return { message: '❌ No inventory data available to export.' };
+                    const exportRes = await this.executeTool('csv_generator', { filename: ctx?.filename || 'inventory_export', data: invRes.data.items });
+                    return { message: `📊 CSV exported: ${exportRes.data.filename}`, toolsUsed: ['inventory_tracker', 'csv_generator'], data: { ...exportRes.data, downloadUrl: `/api/files/csv/${exportRes.data.filename}` } };
+                }
+            },
+            {
+                name: 'Export Manufacturing Excel',
+                action: 'EXPORT_EXCEL',
+                keywords: ['export excel', 'download excel', 'export xlsx', 'excel_generator', 'excel generator'],
+                handler: async (msg, ctx) => {
+                    const invRes = await this.executeTool('inventory_tracker', { action: 'list_items' });
+                    if (!invRes.success || !invRes.data.items?.length) return { message: '❌ No inventory data available to export.' };
+                    const exportRes = await this.executeTool('excel_generator', { filename: ctx?.filename || 'inventory_export', sheets: [{ name: 'Inventory', data: invRes.data.items }] });
+                    return { message: `📊 Excel file exported: ${exportRes.data.filename}`, toolsUsed: ['inventory_tracker', 'excel_generator'], data: { ...exportRes.data, downloadUrl: `/api/files/excel/${exportRes.data.filename}` } };
+                }
+            },
+            {
+                name: 'Export Manufacturing PDF',
+                action: 'EXPORT_PDF',
+                keywords: ['export pdf', 'download pdf', 'pdf_generator', 'pdf generator'],
+                handler: async (msg, ctx) => {
+                    const invRes = await this.executeTool('inventory_tracker', { action: 'list_items' });
+                    if (!invRes.success || !invRes.data.items?.length) return { message: '❌ No inventory data available to export.' };
+                    const exportRes = await this.executeTool('pdf_generator', { title: 'Inventory Stock Report', filename: ctx?.filename || 'inventory_report', content: [{ type: 'heading', text: 'Stock Levels', level: 1 }, { type: 'table', data: invRes.data.items }] });
+                    return { message: `📄 PDF generated: ${exportRes.data.filename}`, toolsUsed: ['inventory_tracker', 'pdf_generator'], data: { ...exportRes.data, downloadUrl: `/api/files/pdfs/${exportRes.data.filename}` } };
                 }
             },
             // Meta

@@ -1,6 +1,16 @@
 import { mock } from "bun:test";
 
 // Mock the actual mongodb package to avoid V8 snapshot issues
+const createChainableFind = (results: any[] = []) => {
+  const chainable = {
+    limit: () => chainable,
+    skip: () => chainable,
+    sort: () => chainable,
+    toArray: async () => results,
+  };
+  return chainable;
+};
+
 mock.module("mongodb", () => {
   return {
     MongoClient: class {
@@ -8,8 +18,8 @@ mock.module("mongodb", () => {
       db() {
         return {
           collection: () => ({
-            insertOne: async () => ({ insertedId: "mock-id-123" }),
-            find: () => ({ toArray: async () => [] }),
+            insertOne: async (data: any) => ({ insertedId: "mock-id-123", ...data }),
+            find: () => createChainableFind([]),
             findOne: async () => null,
             updateOne: async () => ({ modifiedCount: 1 }),
           })
@@ -31,7 +41,7 @@ mock.module("../src/db/mongodb", () => {
       getDb: mock(() => ({
         collection: mock(() => ({
           insertOne: mock(async (data: any) => ({ insertedId: "mock-id-123", ...data })),
-          find: mock(() => ({ toArray: mock(async () => []) })),
+          find: mock(() => createChainableFind([])),
           findOne: mock(async () => null),
           updateOne: mock(async () => ({ modifiedCount: 1 })),
         }))
@@ -50,7 +60,8 @@ mock.module("../src/db/redis", () => {
         set: mock(async () => "OK"),
         del: mock(async () => 1),
         ping: mock(async () => "PONG")
-      }))
+      })),
+      healthCheck: mock(async () => true)
     }
   };
 });

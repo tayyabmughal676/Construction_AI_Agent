@@ -182,13 +182,16 @@ export class EmployeeDirectoryTool implements BaseTool {
                 }
 
                 case 'search': {
-                    const {query} = data;
+                    const {query, searchQueries: customQueries} = data;
                     if (!query) {
                         return {success: false, error: 'search query is required'};
                     }
 
-                    const searchResults = await employees
-                        .find({
+                    // Use custom search queries if provided (for multi-word split search),
+                    // otherwise fall back to standard single-string search
+                    const searchFilter = customQueries
+                        ? { $or: customQueries }
+                        : {
                             $or: [
                                 {firstName: {$regex: query, $options: 'i'}},
                                 {lastName: {$regex: query, $options: 'i'}},
@@ -197,7 +200,10 @@ export class EmployeeDirectoryTool implements BaseTool {
                                 {department: {$regex: query, $options: 'i'}},
                                 {position: {$regex: query, $options: 'i'}},
                             ],
-                        })
+                        };
+
+                    const searchResults = await employees
+                        .find(searchFilter)
                         .limit(20)
                         .toArray();
 

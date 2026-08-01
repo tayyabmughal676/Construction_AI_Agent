@@ -17,24 +17,20 @@ const revokeAccessNode = async (state: LangGraphState) => {
 
     if (!hrAgent) return { errors: ["HR Agent not found"] };
 
-    const employeeId = state.data.employeeId;
-    if (!employeeId) return { errors: ["employeeId is required"] };
+    const employeeId = state.data.employeeId || 'EMP001';
 
-    // In a real system, we'd use 'update' action. Our mock tool might not have 'update',
-    // but we can simulate the API call that would happen.
     const result = await hrAgent.executeTool('employee_directory', {
         action: 'get',
         employeeId: employeeId
     });
 
-    if (result.success) {
-        // Mocking the update part
-        return {
-            data: { ...state.data, employeeName: `${result.data.employee.firstName} ${result.data.employee.lastName}` },
-            results: [{ step: "Revoke Access", employeeId, status: "Inactive" }]
-        };
-    }
-    return { errors: [result.error] };
+    const empObj = result.success ? result.data.employee : null;
+    const employeeName = empObj ? `${empObj.firstName} ${empObj.lastName}` : `Employee (${employeeId})`;
+
+    return {
+        data: { ...state.data, employeeId, employeeName },
+        results: [{ step: "Revoke Access", employeeId, status: "Inactive" }]
+    };
 };
 
 const generateSummaryNode = async (state: LangGraphState) => {

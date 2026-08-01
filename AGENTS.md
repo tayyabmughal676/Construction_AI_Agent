@@ -1,5 +1,8 @@
 # 🤖 Multi-Agent System Documentation
 
+> **Sponsored & Developed by [Data Daur AI & ERP Consulting](https://www.datadaur.com)**  
+> 🌐 Website: [www.datadaur.com](https://www.datadaur.com) • ✉️ Contact: [info@datadaur.com](mailto:contact@datadaur.com)
+
 ## Overview
 
 The Construction AI Agent System features a modular multi-agent architecture designed to handle operations across Construction, Manufacturing, and HR departments. Each agent contains specialized tools for domain-specific tasks, with an intelligent router directing natural language queries to the appropriate agent.
@@ -7,17 +10,17 @@ The Construction AI Agent System features a modular multi-agent architecture des
 ## Architecture
 
 ### Agent Registry
-- **AgentRegistry**: Singleton registry managing all active agents
-- **BaseAgent**: Abstract base class providing common functionality for all agents
-- **Intelligent Router**: Routes user queries to the correct agent using keyword detection or LLM analysis
+- **AgentRegistry**: Singleton registry managing all active agents (`ConstructionAgent`, `HRAgent`, `ManufacturingAgent`).
+- **BaseAgent**: Abstract base class providing common functionality for tool execution, parameter validation, and logging.
+- **Intelligent Router**: Routes user queries to the correct agent using Groq LLM with HTTP 429 exponential backoff retry (primary), LM Studio (fallback), keyword detection, or unified multi-agent system fallback.
 
 ### Agents Overview
 
-| Agent | Department | Status | Tools Count |
-|-------|------------|--------|-------------|
-| ConstructionAgent | Construction | ✅ Active | 4 |
-| ManufacturingAgent | Manufacturing | ✅ Active | 4 |
-| HRAgent | HR | ✅ Active | 4 |
+| Agent | Department | Status | Tools Count | Intents Count | Hub Status |
+|-------|------------|--------|-------------|---------------|------------|
+| **ConstructionAgent** | Construction | ✅ Active | 7 (incl. export) | 9 | ✅ Full CRUD |
+| **ManufacturingAgent** | Manufacturing | ✅ Active | 7 (incl. export) | 9 | ✅ Full CRUD |
+| **HRAgent** | HR | ✅ Active | 6 | 9 | ✅ Full CRUD |
 
 ---
 
@@ -26,16 +29,11 @@ The Construction AI Agent System features a modular multi-agent architecture des
 **Purpose**: Manage construction projects, materials, timelines, and safety compliance.
 
 ### Tools
-- **ProjectTracker**: Create, list, update, and delete construction projects
-- **MaterialCostCalculator**: Calculate material costs with historical data
-- **TimelineEstimator**: Estimate project schedules based on past performance
-- **SafetyChecklistGenerator**: Generate OSHA-compliant safety checklists
-
-### Key Features
-- Real-time project tracking across job sites
-- AI-powered cost estimates with supplier recommendations
-- Timeline predictions using historical data
-- Automated safety compliance generation
+- **ProjectTracker**: Create, list, update, and delete construction projects (`PRJ-001`).
+- **MaterialCostCalculator**: Calculate material cost breakdowns (steel, concrete, lumber, drywall).
+- **TimelineEstimator**: Estimate project phase schedules based on past performance.
+- **SafetyChecklistGenerator**: Generate OSHA-compliant pre-construction & framing safety checklists.
+- **File Generators**: CSV, Excel, and PDF exporters.
 
 ---
 
@@ -44,16 +42,11 @@ The Construction AI Agent System features a modular multi-agent architecture des
 **Purpose**: Oversee inventory, production, quality control, and equipment maintenance.
 
 ### Tools
-- **InventoryTracker**: Monitor and update stock levels
-- **ProductionScheduler**: Schedule production runs and optimize utilization
-- **QualityControlLogger**: Log and analyze QC inspections
-- **EquipmentMaintenance**: Track predictive maintenance and health status
-
-### Key Features
-- Never-run-out inventory management
-- Production scheduling optimization
-- Trend analysis for quality issues
-- Predictive maintenance tracking
+- **InventoryTracker**: Monitor and update stock levels, SKUs (`STEEL-001`), and reorder points.
+- **ProductionScheduler**: Schedule production runs and optimize line utilization.
+- **QualityControlLogger**: Log and analyze batch QC inspections and OEE pass rates.
+- **EquipmentMaintenance**: Track predictive maintenance and machine health status (CNC, Welding Robots).
+- **File Generators**: CSV, Excel, and PDF exporters.
 
 ---
 
@@ -62,132 +55,39 @@ The Construction AI Agent System features a modular multi-agent architecture des
 **Purpose**: Handle employee management, leave, onboarding, and performance tracking.
 
 ### Tools
-- **EmployeeDirectory**: Manage workforce directory and employee records
-- **LeaveManagement**: Handle leave requests and approvals
-- **OnboardingChecklist**: Process new hires with automated checklists
-- **PerformanceTracker**: Track and analyze employee performance reviews
-
-### Key Features
-- Unified workforce management
-- Automated leave approvals
-- Onboarding in minutes, not days
-- Data-driven performance reviews
+- **EmployeeDirectory**: Manage workforce directory with Employee IDs (`EMP001`), split-word regex search.
+- **LeaveManagement**: Handle leave requests, vacation balances, and approval workflows.
+- **OnboardingChecklist**: Process new hires with 15-step automated checklists.
+- **PerformanceTracker**: Track employee quarterly goals, reviews, and performance metrics.
+- **EmailSender**: Send notifications and attachments via SMTP.
 
 ---
 
-## 🛠️ Utility Tools
-
-### Validators
-- Email validation
-- Phone number validation
-- Date validation
-- URL validation
-- SSN validation
-- Credit card validation
-- String/Number validation
-
-### File Generators
-- **CSV Export**: One-click CSV generation for all agent data
-- **Excel Export**: Excel file creation with formatting
-- **PDF Export**: Professional PDF reports
-- **Word Export**: Docx document generation
-
-### Communications
-- **Email Sender**: SMTP-based email integration for notifications and workflows
-
----
-
-## 🎯 Intelligent Router
+## 🎯 Intelligent Router & Capabilities
 
 ### Routing Logic
-1. **Keyword Detection**: Primary method using department-specific keywords
-2. **LLM Fallback**: Optional advanced NLP for complex queries
-3. **Confidence Scoring**: Determines routing accuracy
+1. **Context-Based**: Direct routing when department context is explicitly specified.
+2. **Groq LLM Intent Detection**: High-accuracy natural language classification with parameter extraction and 429 retry backoff.
+3. **LM Studio Fallback**: Local LLM fallback if cloud service is unavailable.
+4. **Keyword Scoring**: Specialized term frequency matching.
+5. **Unified Welcome Fallback**: When query confidence is low (< 0.4) or a generic greeting ("hi", "hello") is received, the router returns a unified multi-agent capabilities overview.
 
-### Supported Query Types
-- Construction: "show projects", "calculate material costs", "safety checklist"
-- Manufacturing: "inventory levels", "schedule production", "equipment status"
-- HR: "employee directory", "onboard new hire", "leave request"
-
-### Response Format
-```json
-{
-  "department": "construction",
-  "toolsUsed": ["project_tracker"],
-  "message": "Response text",
-  "data": { ... }
-}
-```
-
----
-
-## 🔧 Technical Implementation
-
-### Agent Structure
-```
-src/agents/
-├── AgentRegistry.ts      # Agent management
-├── BaseAgent.ts          # Abstract base
-├── ConstructionAgent.ts  # Construction logic
-├── HRAgent.ts           # HR logic
-├── ManufacturingAgent.ts # Manufacturing logic
-├── IntelligentRouter.ts  # Query routing
-└── types.ts             # Type definitions
-```
-
-### Tool Integration
-- Each tool extends a base tool interface
-- Tools are registered with agents at startup
-- Tools handle database operations and business logic
-- Error handling and logging built-in
+### Frontend Capabilities & UX Features
+- **`@`-Mention Tool Selection**: Typing `@` in chat opens an interactive, department-grouped tool menu for quick tool insertion.
+- **🎙️ Voice-to-Text**: Hands-free speech recognition in input bar.
+- **💬 Multi-Thread Chat Sessions**: Sidebar conversation thread switcher stored in `localStorage`.
+- **📥 In-Chat File Downloads**: Instant download cards for CSV, Excel, and PDF reports.
+- **🔔 Toast System**: Animated floating notification popups for all user actions (`success`, `error`, `info`, `warning`).
+- **🌐 6/6 LangGraph Workflows**: Company Control, Employee Onboarding, Project Kickoff, Inventory Restock, Employee Offboarding, Monthly Executive Report.
 
 ---
 
 ## 📊 Current Status
 
 - **Total Agents**: 3
-- **Total Tools**: 12 specialized + 3 utility toolsets
-- **Router**: Keyword-based (LLM integration paused)
-- **Export Support**: CSV, Excel, PDF for all agents
-- **Email Integration**: SMTP ready
+- **Total Tools**: 12 domain tools + 3 export generators + 1 communication tool
+- **Router**: Groq LLM (with 429 retry) + LM Studio + Unified Low-Confidence Fallback
+- **LangGraph Workflows**: 6/6 Operational
+- **Frontend UI**: Full-screen Terminal with `@` autocomplete, Voice input, Multi-thread sessions, Toast notifications, and 3 Full CRUD Department Hubs
 
-### Phase 4 Progress
-- LangGraph workflows: Not implemented
-- LLM integration: Paused (keyword routing works perfectly)
-- Advanced routing: Planned
-
----
-
-## 🚀 Usage Examples
-
-### Construction Query
-```
-Input: "Show me all projects behind schedule"
-→ ConstructionAgent → ProjectTracker
-→ Returns: List of delayed projects with analysis
-```
-
-### Manufacturing Query
-```
-Input: "Add 500 steel beams to inventory"
-→ ManufacturingAgent → InventoryTracker
-→ Returns: Updated stock levels
-```
-
-### HR Query
-```
-Input: "Onboard Sarah as new engineer"
-→ HRAgent → OnboardingChecklist
-→ Returns: Generated checklist and welcome email
-```
-
----
-
-## 📝 Notes
-
-- All agents support export functionality
-- Database seeding provides realistic demo data
-- System is designed for easy addition of new agents/tools
-- Graceful fallbacks ensure system reliability
-
-**Last Updated**: Feb 23, 2026
+**Last Updated**: Aug 2026

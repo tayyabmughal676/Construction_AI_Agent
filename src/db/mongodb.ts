@@ -17,10 +17,43 @@ class MongoDB {
             this.db = this.client.db(env.MONGODB_DB_NAME);
 
             logger.info('✅ MongoDB connected successfully');
+            await this.createIndexes();
             return this.db;
         } catch (error) {
             logger.error({error}, '❌ MongoDB connection failed');
             throw error;
+        }
+    }
+
+    private async createIndexes(): Promise<void> {
+        if (!this.db) return;
+        try {
+            // Text index for fast employee search
+            await this.db.collection('employees').createIndex({
+                firstName: 'text',
+                lastName: 'text',
+                email: 'text',
+                department: 'text',
+                position: 'text',
+            }, { name: 'EmployeeTextIndex', background: true }).catch(() => {});
+
+            // Text index for project search
+            await this.db.collection('projects').createIndex({
+                name: 'text',
+                description: 'text',
+                status: 'text',
+            }, { name: 'ProjectTextIndex', background: true }).catch(() => {});
+
+            // Text index for inventory search
+            await this.db.collection('inventory').createIndex({
+                name: 'text',
+                itemCode: 'text',
+                category: 'text',
+            }, { name: 'InventoryTextIndex', background: true }).catch(() => {});
+
+            logger.info('✅ MongoDB text indexes verified/created');
+        } catch (err) {
+            logger.warn({ err }, 'Warning creating MongoDB indexes');
         }
     }
 

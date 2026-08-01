@@ -15,7 +15,7 @@ const agentRouter = new AgentRouter();
  */
 agentApiRouter.post('/chat', async (c) => {
     try {
-        const body = await c.request.json();
+        const body = (c.body as any) || await c.request.clone().json();
         const {
             message,
             sessionId,

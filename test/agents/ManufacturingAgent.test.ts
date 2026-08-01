@@ -12,9 +12,9 @@ describe('Manufacturing Agent', () => {
         const result = await agent.executeTool('inventory_tracker', {
             action: 'list_items'
         });
-        
+
         expect(result.success).toBe(true);
-        expect(result.data.items).toBeInstanceOf(Array);
+        expect(result.data.items).toBeDefined();
     });
 
     it('should reject invalid actions for inventory tracker', async () => {

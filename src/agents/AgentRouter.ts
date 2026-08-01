@@ -82,6 +82,7 @@ export class AgentRouter {
 
     /**
      * Routes the message to the detected agent and returns its response.
+     * Low-confidence matches receive a unified multi-agent welcome.
      */
     async route(
         message: string,
@@ -95,12 +96,43 @@ export class AgentRouter {
             detection
         }, 'Routing message');
 
+        // If confidence is very low (generic greeting, vague message),
+        // return a unified welcome listing ALL departments (unless it's an explicit export action).
+        if (detection.confidence < 0.4 && !detection.action?.startsWith('EXPORT_')) {
+            const summaries = this.registry.getAgentSummaries();
+            const sections = summaries.map(agent => {
+                const icon = agent.department === 'construction' ? '🏗️' :
+                             agent.department === 'manufacturing' ? '🏭' :
+                             agent.department === 'hr' ? '👥' : '🤖';
+                const actions = agent.actions
+                    .filter(a => !['EXPORT_CSV', 'EXPORT_EXCEL', 'EXPORT_PDF'].includes(a))
+                    .slice(0, 5)
+                    .map(a => a.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, c => c.toUpperCase()))
+                    .join(', ');
+                return `${icon} **${agent.name}** — ${actions}`;
+            });
+
+            return {
+                message: `Hello! I'm the Construction AI multi-agent system. I can help with:\n\n` +
+                    sections.join('\n\n') +
+                    `\n\nJust describe what you need and I'll route you to the right agent automatically!`,
+                sessionId,
+                department: 'system',
+                toolsUsed: [],
+                detection: {
+                    ...detection,
+                    department: 'system',
+                    reason: 'Generic greeting — showing unified capabilities.',
+                },
+            };
+        }
+
         const agent = this.registry.getAgent(detection.department);
         if (!agent) {
             const errorMsg = `No agent found for department: '${detection.department}'.`;
             logger.error(errorMsg);
             return {
-                message: `Sorry, I can't find an agent for the '${detection.department} ' department.`,
+                message: `Sorry, I can't find an agent for the '${detection.department}' department.`,
                 sessionId,
                 department: 'unknown',
                 detection: {

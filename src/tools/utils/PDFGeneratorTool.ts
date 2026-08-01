@@ -56,8 +56,8 @@ export class PDFGeneratorTool implements BaseTool {
                 info: {
                     Title: validated.title,
                     Author: validated.metadata?.author || 'Multi-Agent System',
-                    Subject: validated.metadata?.subject,
-                    Keywords: validated.metadata?.keywords,
+                    Subject: validated.metadata?.subject || '',
+                    Keywords: validated.metadata?.keywords || '',
                 },
             });
 
@@ -103,18 +103,35 @@ export class PDFGeneratorTool implements BaseTool {
                         if (section.data && Array.isArray(section.data)) {
                             doc.fontSize(10).font('Helvetica');
 
-                            // Simple table rendering
                             const tableData = section.data as any[];
                             if (tableData.length > 0) {
-                                // Header
                                 const headers = Object.keys(tableData[0]);
-                                doc.font('Helvetica-Bold');
-                                doc.text(headers.join(' | '), {indent: 20});
-                                doc.font('Helvetica');
 
-                                // Rows
+                                const printHeader = () => {
+                                    doc.font('Helvetica-Bold').fontSize(10);
+                                    doc.text(headers.join(' | '), {indent: 20});
+                                    doc.font('Helvetica');
+                                    doc.moveDown(0.2);
+                                };
+
+                                printHeader();
+
+                                // Rows with auto-pagination check
                                 tableData.forEach(row => {
-                                    const values = headers.map(h => row[h] || '');
+                                    if (doc.y > doc.page.height - 70) {
+                                        doc.addPage();
+                                        printHeader();
+                                    }
+                                    const values = headers.map(h => {
+                                        const val = row[h];
+                                        if (val === null || val === undefined) return '';
+                                        if (typeof val === 'object') {
+                                            return typeof val.toString === 'function' && val.toString !== Object.prototype.toString
+                                                ? val.toString()
+                                                : JSON.stringify(val);
+                                        }
+                                        return String(val);
+                                    });
                                     doc.text(values.join(' | '), {indent: 20});
                                 });
                                 doc.moveDown(1);

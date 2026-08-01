@@ -1,0 +1,277 @@
+### =========================================================================
+### Construction AI Agent System - Complete REST API Endpoints
+### Compatible with VS Code REST Client, JetBrains HTTP Client, and Postman
+### =========================================================================
+
+@baseUrl = http://localhost:3000
+@authToken = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjZhNmNlNGI3ZTY0ZjczOWY0MjE3MTExOSIsImVtYWlsIjoiYWRtaW5AZXhhbXBsZS5jb20iLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3ODU1MjEzNDUsImV4cCI6MTc4NjEyNjE0NX0.hK_w9tu348_DI1JSiEhzCO4LnCmp16Yq0iaucfx-FDs
+@sessionId = c0a80101-0000-0000-0000-000000000001
+
+
+# =========================================================================
+# 1. SYSTEM & HEALTH ENDPOINTS (Public)
+# =========================================================================
+
+### 1.1 Root Status
+GET {{baseUrl}}/
+Accept: application/json
+
+### 1.2 Health Check & Redis Dependency Status
+GET {{baseUrl}}/health
+Accept: application/json
+
+### 1.3 API Index Overview
+GET {{baseUrl}}/api/
+Accept: application/json
+
+### 1.4 API Documentation Redirect (Swagger)
+GET {{baseUrl}}/api/docs
+Accept: application/json
+
+
+# =========================================================================
+# 2. AUTHENTICATION ENDPOINTS (Public)
+# =========================================================================
+
+### 2.1 User Registration
+POST {{baseUrl}}/api/auth/register
+Content-Type: application/json
+
+{
+  "name": "Admin User",
+  "email": "admin@example.com",
+  "password": "password123",
+  "role": "admin"
+}
+
+### 2.2 User Login (Generates Bearer JWT Token)
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@example.com",
+  "password": "password123"
+}
+
+
+# =========================================================================
+# 3. UNIFIED AI AGENT ENDPOINTS (Requires Auth Token)
+# =========================================================================
+
+### 3.1 Unified Agent Natural Language Chat (Intelligent Routing)
+# Routes queries across Construction, HR, and Manufacturing automatically
+POST {{baseUrl}}/api/agents/chat
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "message": "Show me all active projects behind schedule",
+  "sessionId": "{{sessionId}}",
+  "department": "construction",
+  "context": {
+    "requestedBy": "Site Supervisor"
+  }
+}
+
+### 3.2 Add Inventory via Unified Agent Chat
+POST {{baseUrl}}/api/agents/chat
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "message": "Add 500 units of Steel Beams to inventory",
+  "sessionId": "{{sessionId}}"
+}
+
+### 3.3 System Agent Capabilities List
+GET {{baseUrl}}/api/agents/capabilities
+Authorization: Bearer {{authToken}}
+Accept: application/json
+
+
+# =========================================================================
+# 4. CONSTRUCTION DEPARTMENT ENDPOINTS (Requires Auth Token)
+# =========================================================================
+
+### 4.1 Get Construction Projects List
+GET {{baseUrl}}/api/construction/projects
+Authorization: Bearer {{authToken}}
+Accept: application/json
+
+### 4.2 Direct Construction Agent Chat
+POST {{baseUrl}}/api/construction/chat
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "message": "Calculate material costs for 500 bags of cement and 200 steel bars",
+  "sessionId": "{{sessionId}}"
+}
+
+### 4.3 Construction Agent Capabilities
+GET {{baseUrl}}/api/construction/capabilities
+Authorization: Bearer {{authToken}}
+Accept: application/json
+
+### 4.4 Direct Tool Execution: Project Tracker (List Projects)
+POST {{baseUrl}}/api/construction/tools/project_tracker
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "action": "list"
+}
+
+### 4.5 Direct Tool Execution: Project Tracker (Create Project)
+POST {{baseUrl}}/api/construction/tools/project_tracker
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "action": "create",
+  "name": "Downtown Metro Station Phase 1",
+  "description": "Subway expansion project",
+  "budget": 25000000
+}
+
+### 4.6 Direct Tool Execution: Material Cost Calculator
+POST {{baseUrl}}/api/construction/tools/material_cost_calculator
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "materials": [
+    { "item": "Concrete", "quantity": 100, "unit": "cubic_yards" },
+    { "item": "Rebar", "quantity": 50, "unit": "tons" }
+  ]
+}
+
+### 4.7 Direct Tool Execution: Timeline Estimator
+POST {{baseUrl}}/api/construction/tools/timeline_estimator
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "projectType": "commercial_building",
+  "squareFootage": 50000
+}
+
+### 4.8 Direct Tool Execution: Safety Checklist Generator
+POST {{baseUrl}}/api/construction/tools/safety_checklist_generator
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "siteType": "High-rise construction",
+  "hazards": ["working at height", "heavy machinery", "electrical"]
+}
+
+
+# =========================================================================
+# 5. HR DEPARTMENT ENDPOINTS (Requires Auth Token)
+# =========================================================================
+
+### 5.1 Get Workforce / Employee Directory
+GET {{baseUrl}}/api/hr/employees
+Authorization: Bearer {{authToken}}
+Accept: application/json
+
+
+# =========================================================================
+# 6. MANUFACTURING DEPARTMENT ENDPOINTS (Requires Auth Token)
+# =========================================================================
+
+### 6.1 Get Inventory Stock Levels
+GET {{baseUrl}}/api/manufacturing/inventory
+Authorization: Bearer {{authToken}}
+Accept: application/json
+
+### 6.2 Get Manufacturing Production Stats & OEE Metrics
+GET {{baseUrl}}/api/manufacturing/stats
+Authorization: Bearer {{authToken}}
+Accept: application/json
+
+
+# =========================================================================
+# 7. LANGGRAPH WORKFLOW ENDPOINTS (Requires Admin Auth Token)
+# =========================================================================
+
+### 7.1 Execute Employee Onboarding Workflow
+POST {{baseUrl}}/api/workflows/langgraph/execute
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "sessionId": "{{sessionId}}",
+  "context": {
+    "firstName": "Sarah",
+    "lastName": "Connor",
+    "email": "sarah.connor@construction-ai.com",
+    "department": "Construction",
+    "position": "Senior Project Engineer"
+  }
+}
+
+### 7.2 Execute Company Control Orchestration Graph
+POST {{baseUrl}}/api/workflows/langgraph/company-control
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "message": "Analyze current inventory levels and initiate restock if steel beam count is below threshold",
+  "sessionId": "{{sessionId}}"
+}
+
+### 7.3 Execute Project Kickoff Workflow
+POST {{baseUrl}}/api/workflows/langgraph/project-kickoff
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "sessionId": "{{sessionId}}",
+  "context": {
+    "projectName": "City Bridge Expansion",
+    "location": "River District",
+    "budget": 15000000
+  }
+}
+
+### 7.4 Execute Inventory Restock Workflow
+POST {{baseUrl}}/api/workflows/langgraph/inventory-restock
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "sessionId": "{{sessionId}}",
+  "context": {
+    "item": "Steel Beams",
+    "quantity": 250,
+    "supplier": "Apex Industrial Supply"
+  }
+}
+
+### 7.5 Execute Employee Offboarding Workflow
+POST {{baseUrl}}/api/workflows/langgraph/employee-offboarding
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "sessionId": "{{sessionId}}",
+  "context": {
+    "employeeId": "EMP-001",
+    "reason": "Resignation"
+  }
+}
+
+### 7.6 Execute Executive Report Generation Workflow
+POST {{baseUrl}}/api/workflows/langgraph/executive-report
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "sessionId": "{{sessionId}}",
+  "context": {
+    "period": "Q3-2026",
+    "includeDepartments": ["construction", "manufacturing", "hr"]
+  }
+}

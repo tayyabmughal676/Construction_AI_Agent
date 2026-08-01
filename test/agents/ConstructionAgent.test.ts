@@ -5,7 +5,7 @@ describe('Construction Agent', () => {
     const agent = new ConstructionAgent();
 
     it('should have correct name and department', () => {
-        expect(agent.name).toBe('construction');
+        expect(agent.name).toBe('Construction');
     });
 
     it('should process a generic message gracefully', async () => {
@@ -14,26 +14,26 @@ describe('Construction Agent', () => {
         expect(result.message).toBeDefined();
     });
 
-    it('should successfully execute the material_calculator tool', async () => {
-        const result = await agent.executeTool('material_calculator', {
-            projectType: 'commercial',
-            squareFootage: 5000,
-            qualityTier: 'standard'
+    it('should successfully execute the material_cost_calculator tool', async () => {
+        const result = await agent.executeTool('material_cost_calculator', {
+            materials: [
+                { material: 'concrete', quantity: 50, unit: 'cu_yd' },
+                { material: 'steel', quantity: 10, unit: 'tons' }
+            ]
         });
-        
+
         expect(result.success).toBe(true);
         expect(result.data).toBeDefined();
-        expect(result.data.totalEstimatedCost).toBeGreaterThan(0);
+        expect(result.data.grandTotal).toBeGreaterThan(0);
     });
 
-    it('should successfully execute the safety_checklist tool', async () => {
-        const result = await agent.executeTool('safety_checklist', {
-            action: 'generate',
-            projectType: 'residential'
+    it('should successfully execute the safety_checklist_generator tool', async () => {
+        const result = await agent.executeTool('safety_checklist_generator', {
+            projectType: 'commercial'
         });
 
         expect(result.success).toBe(true);
-        expect(result.data.checklistId).toBeDefined();
-        expect(result.data.items.length).toBeGreaterThan(0);
+        expect(result.data.checklist).toBeDefined();
+        expect(result.data.checklist.length).toBeGreaterThan(0);
     });
 });

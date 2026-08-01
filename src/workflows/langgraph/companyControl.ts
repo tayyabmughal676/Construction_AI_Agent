@@ -1,6 +1,7 @@
 import { StateGraph, START, END } from "@langchain/langgraph";
 import { LangGraphState } from "./state";
 import { AgentRegistry } from "../../agents/AgentRegistry";
+import { groqService } from "../../services/groq";
 import { lmStudioService } from "../../services/lmstudio";
 import { logger } from "../../config/logger";
 
@@ -15,22 +16,38 @@ const analyzeRequestNode = async (state: LangGraphState) => {
     const registry = AgentRegistry.getInstance();
     const summaries = registry.getAgentSummaries();
 
+    let tasks: any[] = [];
     try {
-        const tasks = await lmStudioService.decomposeTasks(state.data.message, summaries);
-        logger.info({ count: tasks.length }, "CompanyControl: Decompostion complete.");
-
-        return {
-            data: {
-                ...state.data,
-                pendingTasks: tasks,
-                completedTasks: []
-            },
-            status: 'running' as const
-        };
-    } catch (error) {
-        logger.error({ error }, "CompanyControl: Decomposition failed.");
-        return { errors: [error instanceof Error ? error.message : "Failed to analyze request"] };
+        if (groqService.isAvailable()) {
+            tasks = await groqService.decomposeTasks(state.data.message, summaries);
+        } else if (lmStudioService.isAvailable()) {
+            tasks = await lmStudioService.decomposeTasks(state.data.message, summaries);
+        }
+    } catch (err) {
+        logger.warn({ err }, "AI service decomposition failed, using default task fallback");
     }
+
+    // Fallback if AI decomposition returns empty or failed
+    if (!tasks || tasks.length === 0) {
+        tasks = [{
+            department: 'hr',
+            action: 'QUERY_POLICY',
+            confidence: 0.8,
+            reasoning: 'Fallback task for general enterprise query',
+            parameters: {}
+        }];
+    }
+
+    logger.info({ count: tasks.length }, "CompanyControl: Decomposition complete.");
+
+    return {
+        data: {
+            ...state.data,
+            pendingTasks: tasks,
+            completedTasks: []
+        },
+        status: 'running' as const
+    };
 };
 
 // 2. Executor Node: Runs the next pending task from the list

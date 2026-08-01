@@ -132,8 +132,10 @@ export const corsMiddleware = (options: {
 
         // Handle preflight requests
         if (c.request.method === 'OPTIONS') {
-            c.set.status = 204;
-            return '';
+            return new Response(null, {
+                status: 204,
+                headers: c.set.headers as Record<string, string>
+            });
         }
     };
 };

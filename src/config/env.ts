@@ -22,6 +22,8 @@ const envSchema = z.object({
     OPENAI_API_KEY: z.string().optional(),
     ANTHROPIC_API_KEY: z.string().optional(),
     GOOGLE_API_KEY: z.string().optional(),
+    GROQ_API_KEY: z.string().optional(),
+    GROQ_API_MODEL: z.string().default('openai/gpt-oss-120b'),
     LM_STUDIO_URL: z.string().default('http://192.168.100.150:1234/v1'),
     LM_STUDIO_MODEL: z.string().default('zai-org/glm-4.6v-flash'),
 

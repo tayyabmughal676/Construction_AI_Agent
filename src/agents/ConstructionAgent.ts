@@ -59,46 +59,46 @@ export class ConstructionAgent extends BaseAgent {
             {
                 name: 'List Projects',
                 action: 'LIST_PROJECTS',
-                keywords: ['list project', 'show project', 'view all projects'],
+                keywords: ['list project', 'show project', 'view all projects', 'project_tracker', 'project tracker'],
                 handler: this.handleListProjects,
             },
             // Cost & Timeline
             {
                 name: 'Calculate Material Cost',
                 action: 'CALCULATE_COST',
-                keywords: ['material cost', 'calculate cost'],
+                keywords: ['material cost', 'calculate cost', 'material_cost_calculator'],
                 handler: this.handleCalculateMaterialCost,
             },
             {
                 name: 'Estimate Timeline',
                 action: 'ESTIMATE_TIMELINE',
-                keywords: ['timeline', 'schedule', 'estimate duration'],
+                keywords: ['timeline', 'schedule', 'estimate duration', 'timeline_estimator'],
                 handler: this.handleEstimateTimeline,
             },
             // Safety
             {
                 name: 'Generate Safety Checklist',
                 action: 'GENERATE_CHECKLIST',
-                keywords: ['safety', 'checklist'],
+                keywords: ['safety', 'checklist', 'safety_checklist_generator'],
                 handler: this.handleGenerateSafetyChecklist,
             },
             // Exporting
             {
                 name: 'Export to CSV',
                 action: 'EXPORT_CSV',
-                keywords: ['export csv', 'download csv'],
+                keywords: ['export csv', 'download csv', 'csv_generator', 'csv generator'],
                 handler: (msg, ctx) => this.handleExport('csv', ctx),
             },
             {
                 name: 'Export to Excel',
                 action: 'EXPORT_EXCEL',
-                keywords: ['export excel', 'download excel', 'export xlsx'],
+                keywords: ['export excel', 'download excel', 'export xlsx', 'excel_generator', 'excel generator'],
                 handler: (msg, ctx) => this.handleExport('excel', ctx),
             },
             {
                 name: 'Export to PDF',
                 action: 'EXPORT_PDF',
-                keywords: ['export pdf', 'download pdf'],
+                keywords: ['export pdf', 'download pdf', 'pdf_generator', 'pdf generator'],
                 handler: (msg, ctx) => this.handleExport('pdf', ctx),
             },
             // Meta
@@ -259,9 +259,9 @@ export class ConstructionAgent extends BaseAgent {
                     data: projects,
                 });
                 return {
-                    message: `📊 CSV exported: ${exportResult.data.filename} `,
+                    message: `📊 CSV exported: ${exportResult.data.filename}`,
                     toolsUsed: ['project_tracker', 'csv_generator'],
-                    data: exportResult.data,
+                    data: { ...exportResult.data, downloadUrl: `/api/files/csv/${exportResult.data.filename}` },
                 };
             case 'excel':
                 exportResult = await this.executeTool('excel_generator', {
@@ -272,9 +272,9 @@ export class ConstructionAgent extends BaseAgent {
                     }],
                 });
                 return {
-                    message: `📊 Excel file exported: ${exportResult.data.filename} `,
+                    message: `📊 Excel file exported: ${exportResult.data.filename}`,
                     toolsUsed: ['project_tracker', 'excel_generator'],
-                    data: exportResult.data,
+                    data: { ...exportResult.data, downloadUrl: `/api/files/excel/${exportResult.data.filename}` },
                 };
             case 'pdf':
                 exportResult = await this.executeTool('pdf_generator', {
@@ -290,9 +290,9 @@ export class ConstructionAgent extends BaseAgent {
                     },],
                 });
                 return {
-                    message: `📄 PDF generated: ${exportResult.data.filename} `,
+                    message: `📄 PDF generated: ${exportResult.data.filename}`,
                     toolsUsed: ['project_tracker', 'pdf_generator'],
-                    data: exportResult.data,
+                    data: { ...exportResult.data, downloadUrl: `/api/files/pdfs/${exportResult.data.filename}` },
                 };
         }
     }

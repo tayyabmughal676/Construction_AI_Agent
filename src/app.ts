@@ -2,6 +2,8 @@ import './patch';
 import { Elysia } from 'elysia';
 import { swagger } from '@elysiajs/swagger';
 import jwt from 'jsonwebtoken';
+import fs from 'fs';
+import path from 'path';
 import { UserSchema } from './db/models/User';
 import { mongodb } from './db/mongodb';
 import bcrypt from 'bcrypt';
@@ -56,10 +58,13 @@ logger.info('✅ Agents registered successfully.');
 // 2. Initialize Redis Connection
 redis.connect();
 
+import { cors } from '@elysiajs/cors';
+
 // 3. Initialize Elysia App
 const app = new Elysia();
 
-// Add Swagger
+// Add CORS and Swagger
+app.use(cors());
 app.use(swagger());
 
 // 4. Apply Middleware
@@ -71,9 +76,6 @@ app.onBeforeHandle(async (c) => {
     
     const rateLimitRes = await rateLimiter()(c);
     if (rateLimitRes) return rateLimitRes;
-    
-    const corsRes = await corsMiddleware()(c);
-    if (corsRes) return corsRes;
     
     const validateRes = await validateRequest()(c);
     if (validateRes) return validateRes;
@@ -107,8 +109,12 @@ app.get('/health', async (c) => {
 // API Routes with group
 app.group('/api', (api) => api
     .onBeforeHandle(async (c) => {
+        // Bypass auth for preflight requests
+        if (c.request.method === 'OPTIONS') {
+            return;
+        }
         // Conditional auth
-        if (c.path.startsWith('/api/auth') || c.path === '/api/docs' || c.path === '/api/openapi.json' || c.path === '/api/health' || c.path === '/api/') {
+        if (c.path.startsWith('/api/auth') || c.path.startsWith('/api/files') || c.path === '/api/docs' || c.path === '/api/openapi.json' || c.path === '/api/health' || c.path === '/api/') {
             return;
         }
         // Auth logic
@@ -130,7 +136,7 @@ app.group('/api', (api) => api
         console.log('Register request received')
         try {
             console.log('Parsing body')
-            const body = await c.request.json();
+            const body = (c.body as any) || await c.request.clone().json();
             console.log('Body parsed:', body)
             const userData = UserSchema.parse(body);
             console.log('User data validated:', userData)
@@ -171,7 +177,8 @@ app.group('/api', (api) => api
     .post('/auth/login', async (c) => {
         console.log('Login request received')
         try {
-            const { email, password } = await c.request.json() as { email: string; password: string };
+            const body = ((c.body as any) || await c.request.clone().json()) as { email?: string; password?: string };
+            const { email, password } = body;
             console.log('Login attempt for:', email)
 
             if (!email || !password) {
@@ -217,6 +224,28 @@ app.group('/api', (api) => api
     .group('/hr', (group) => group.use(requireRole(['admin', 'user'])).use(hrRouter))
     .group('/construction', (group) => group.use(requireRole(['admin', 'user'])).use(constructionRouter))
     .group('/manufacturing', (group) => group.use(requireRole(['admin', 'user'])).use(manufacturingRouter))
+    .get('/files/:type/:filename', async (c) => {
+        const { type, filename } = c.params;
+        const safeType = type.replace(/[^a-zA-Z0-9_-]/g, '');
+        const safeFilename = filename.replace(/[^a-zA-Z0-9_.-]/g, '');
+        const filePath = path.join(process.cwd(), 'generated', safeType, safeFilename);
+
+        if (!fs.existsSync(filePath)) {
+            c.set.status = 404;
+            return { error: 'File not found' };
+        }
+
+        const file = Bun.file(filePath);
+        return new Response(file, {
+            headers: {
+                'Content-Type': safeFilename.endsWith('.pdf') ? 'application/pdf' :
+                                safeFilename.endsWith('.csv') ? 'text/csv' :
+                                safeFilename.endsWith('.xlsx') ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' :
+                                'application/octet-stream',
+                'Content-Disposition': `attachment; filename="${safeFilename}"`,
+            }
+        });
+    })
     .get('/', (c) => {
         return {
             message: 'Multi-Agent Construction & Industrial API',

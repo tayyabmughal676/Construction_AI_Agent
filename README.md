@@ -1,282 +1,240 @@
+<div align="center">
+
 # 🏗️ Construction AI Agent System
+### **Enterprise Multi-Agent Platform & Autonomous LangGraph Orchestrator**
 
-### **Transforming the $13 Trillion Construction Industry with AI**
+[![Sponsored & Developed by Data Daur](https://img.shields.io/badge/Sponsored%20%26%20Developed%20By-Data%20Daur%20AI%20%26%20ERP%20Consulting-blue?style=for-the-badge&logo=shield)](https://www.datadaur.com)
 
-> The construction industry loses **$177 billion annually** due to inefficiencies, miscommunication, and manual processes. Our AI Agent System eliminates these bottlenecks by automating operations across Construction, Manufacturing, and HR departments.
+[![Bun Version](https://img.shields.io/badge/Bun-v1.3+-black?logo=bun)](https://bun.sh)
+[![Elysia.js](https://img.shields.io/badge/Elysia-v1.4-purple?logo=elysia)](https://elysiajs.com)
+[![LangGraph](https://img.shields.io/badge/LangGraph-v1.4-blue)](https://langchain.com)
+[![MongoDB](https://img.shields.io/badge/MongoDB-v7.5-green?logo=mongodb)](https://mongodb.com)
+[![Redis](https://img.shields.io/badge/Redis-v5.11-red?logo=redis)](https://redis.io)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
----
+*Eliminating the **$177 Billion Annual Loss** in Construction Operations through Autonomous AI Multi-Agent Orchestration.*
 
-## 🎯 The Problem
-
-| Challenge | Impact |
-|-----------|--------|
-| **Information Silos** | Teams waste 5+ hours/week searching for project data |
-| **Manual Reporting** | Supervisors spend 30% of time on paperwork instead of construction |
-| **Delayed Decisions** | Material shortages discovered too late cost $500k+ per project |
-| **Compliance Risks** | Safety violations average $14,000 per incident in fines |
-| **HR Overhead** | Onboarding a single worker takes 8+ hours of admin time |
-
-**Bottom line:** Construction companies operate with 1980s processes in a 2024 world.
+[🏢 About Data Daur](#-sponsored--developed-by) • [🚀 Quick Start](#-quick-start) • [✨ Key Features](#-key-features) • [🏛️ Architecture](#-system-architecture) • [📖 API Reference](#-api-reference)
 
 ---
 
-## � Our Solution
+</div>
 
-**An AI-powered command center** that understands natural language and automates operations across your entire organization:
+## 🏢 Sponsored & Developed By
+
+This open-source project is proudly sponsored, engineered, and maintained by **[Data Daur AI & ERP Consulting](https://www.datadaur.com)**.
+
+> **Data Daur** specializes in empowering global enterprises with tailored Artificial Intelligence, autonomous multi-agent systems, data engineering pipelines, and custom ERP integration services across Construction, Manufacturing, Logistics, and Corporate Operations.
+>
+> 🌐 **Website**: [www.datadaur.com](https://www.datadaur.com)  
+> ✉️ **Enterprise Inquiries**: [contact@datadaur.com](mailto:contact@datadaur.com)
+
+---
+
+## 📌 Overview
+
+The **Construction AI Agent System** is a production-ready, open-source multi-agent platform designed to bridge information silos and automate operations across **Construction**, **Manufacturing**, and **HR** departments. 
+
+Using an **Intelligent NLP Router (Groq LLM + LM Studio Fallback)** alongside **LangGraph StateGraph Workflows**, the system decomposes complex user queries (*"Onboard Sarah as an engineer, order 500 steel beams, and estimate site timeline"*) into parallel or sequential execution tasks across specialized AI agents.
+
+---
+
+## ✨ Key Features & Capabilities
 
 ```
-👷 "Show me all projects behind schedule"
-🤖 → Instantly retrieves delayed projects with root cause analysis
-
-👷 "Calculate material costs for the downtown project"  
-🤖 → Returns itemized cost breakdown with supplier recommendations
-
-👷 "Onboard Sarah as a new project engineer"
-🤖 → Creates employee record, generates checklist, sends welcome email
+┌───────────────────────────────────────────────────────────────────────────────────────────┐
+│                                   🌟 PLATFORM HIGHLIGHTS                                  │
+├───────────────────────────────┬───────────────────────────────┬───────────────────────────┤
+│ 🏗️ Construction Agent        │ 🏭 Manufacturing Agent        │ 👥 HR Agent               │
+│ • Project Tracker & CRUD      │ • Inventory Tracker & SKUs    │ • Employee Directory CRUD │
+│ • Material Cost Calculator    │ • OEE Production Metrics      │ • Onboarding Checklists   │
+│ • Timeline Estimator          │ • Quality Control Logging     │ • Vacation & Leave Balances│
+│ • OSHA Safety Checklists      │ • Equipment Maintenance       │ • Performance Trackers    │
+├───────────────────────────────┼───────────────────────────────┼───────────────────────────┤
+│ 🌐 LangGraph Workflows        │ 🎨 Terminal & User Experience │ 📄 Reports & Exports      │
+│ • Company Control Orchestration│ • `@` Tool Autocomplete Menu  │ • CSV Export Generator    │
+│ • 15-Step Employee Onboarding │ • 🎙️ Voice-to-Text Speech     │ • Excel Sheet Exporter    │
+│ • Project Kickoff Pipelines   │ • 💬 Multi-Thread Sessions    │ • PDF Document Renderer   │
+│ • Inventory Restock Trigger   │ • 🔔 Animated Toast Alerts    │ • In-Chat Download Cards  │
+└───────────────────────────────┴───────────────────────────────┴───────────────────────────┘
 ```
 
-**One AI. Three Departments. Zero Friction.**
+---
+
+## 🏛️ System Architecture
+
+```
+                       [ User / Web Terminal UI (React 18 + Vite) ]
+                                            │
+                      ┌─────────────────────┴─────────────────────┐
+                      ▼                                           ▼
+        ⚡ Fast REST Agent Router                    🌐 LangGraph Workflow Center
+       (Groq LLM + 429 Retry Backoff)               (StateGraph Workflow Engine)
+                      │                                           │
+       ┌──────────────┼──────────────┐             ┌──────────────┼──────────────┐
+       ▼              ▼              ▼             ▼              ▼              ▼
+ 🏗️ Construction    👥 HR     🏭 Manufacturing  Kickoff     Onboarding     Control
+    Agent          Agent          Agent       Workflow      Workflow      Workflow
+       │              │              │             │              │              │
+       └──────────────┴──────────────┴─────────────┴──────────────┴──────────────┘
+                                            │
+                               ┌────────────┴────────────┐
+                               ▼                         ▼
+                       🍃 MongoDB 7.5            ⚡ Redis 5.11
+                     (Text Indexes Active)     (Session Token Cache)
+```
 
 ---
 
-## 🚀 Key Features
+## 🚀 Quick Start
 
-### 🏗️ Construction Agent
-- **Project Tracking** - Real-time visibility across all job sites
-- **Material Cost Calculator** - Instant cost estimates with historical data
-- **Timeline Estimator** - AI-powered scheduling based on past performance
-- **Safety Checklist Generator** - OSHA-compliant checklists in seconds
+### 1. Prerequisites
+- **[Bun Runtime](https://bun.sh)** (`>= 1.0`)
+- **[Docker & Docker Compose](https://www.docker.com/)**
 
-### 🏭 Manufacturing Agent  
-- **Inventory Management** - Never run out of critical materials
-- **Production Scheduling** - Optimize equipment utilization
-- **Quality Control** - Automated QC logging and trend analysis
-- **Equipment Maintenance** - Predictive maintenance tracking
-
-### 👥 HR Agent
-- **Employee Directory** - Unified workforce management
-- **Leave Management** - Automated approvals and tracking
-- **Onboarding Workflows** - New hire setup in minutes, not days
-- **Performance Tracking** - Data-driven performance reviews
-
-### 📊 Export & Reporting
-- One-click export to **CSV**, **Excel**, or **PDF**
-- Automated report generation
-- Email integration for instant distribution
-
----
-
-## � Business Impact
-
-| Metric | Improvement |
-|--------|-------------|
-| **Administrative Time** | ↓ 70% reduction |
-| **Decision Speed** | ↑ 10x faster data access |
-| **Onboarding Time** | ↓ 80% reduction (8 hours → 90 minutes) |
-| **Report Generation** | ↓ 95% reduction (hours → seconds) |
-| **Cross-Department Visibility** | ↑ 100% real-time access |
-
----
-
-## 🎬 See It In Action
+### 2. Clone & Setup Repository
 
 ```bash
-# Check project status
-curl -X POST http://localhost:3000/api/agents/chat \
-  -H "Content-Type: application/json" \
-  -d '{"message": "list all projects"}'
+# Clone the open-source repository
+git clone https://github.com/tayyabmughal676/Construction_AI_Agent.git
+cd Construction_AI_Agent
 
-# Get inventory levels
-curl -X POST http://localhost:3000/api/agents/chat \
-  -H "Content-Type: application/json" \
-  -d '{"message": "show current inventory"}'
-
-# Export to Excel with one command
-curl -X POST http://localhost:3000/api/agents/chat \
-  -H "Content-Type: application/json" \
-  -d '{"message": "export projects to Excel"}'
-```
-
----
-
-## 🛠️ Technical Architecture
-
-### Built For Enterprise Scale
-
-| Component | Technology | Why |
-|-----------|------------|-----|
-| **Runtime** | Bun.js | 3x faster than Node.js |
-| **API** | Elysia.js | TypeScript-first, high-performance web framework |
-| **Database** | MongoDB | Flexible schemas, horizontal scaling |
-| **Cache** | Redis | Sub-millisecond response times |
-| **AI/ML** | LangChain + LangGraph | Production-grade AI orchestration |
-| **Language** | TypeScript | Type-safe, maintainable codebase |
-
-### Project Structure
-
-```
-src/
-├── agents/           # AI agent definitions + intelligent router
-├── config/           # Environment & configuration
-├── db/               # MongoDB & Redis clients
-├── middleware/       # Auth, logging, rate limiting
-├── routes/           # REST API endpoints
-├── services/         # Business logic & LLM services
-├── tools/            # 25+ specialized tools
-│   ├── construction/ # Project, material, timeline, safety tools
-│   ├── hr/           # Employee, leave, onboarding, performance tools
-│   ├── manufacturing/# Inventory, production, quality, equipment tools
-│   └── utils/        # Export, validation, email tools
-└── utils/            # Validators & helpers
-```
-
----
-
-## � Quick Start
-
-### Prerequisites
-- [Bun](https://bun.sh) >= 1.0
-- [Docker](https://www.docker.com/) & Docker Compose
-
-### Installation
-
-```bash
-# 1. Install dependencies
+# Install dependencies for backend and frontend
 bun install
+cd frontend && bun install && cd ..
+```
 
-# 2. Start databases
+### 3. Configure Environment Variables
+
+```bash
+cp .env.example .env
+```
+
+*Default environment parameters:*
+```env
+PORT=3000
+MONGODB_URI=mongodb://localhost:27017/multi-ai-agency
+MONGODB_DB_NAME=multi-ai-agency
+REDIS_HOST=localhost
+REDIS_PORT=6379
+GROQ_API_KEY=your_groq_api_key_here
+JWT_SECRET=super_secret_jwt_key_2026
+```
+
+### 4. Start Infrastructure & Seed Demo Data
+
+```bash
+# Start MongoDB & Redis Docker containers
 docker-compose up -d
 
-# 3. Configure environment
-cp .env.example .env
-# Add your API keys
-
-# 4. Seed demo data
+# Seed database with rich enterprise demo data
 bun run seed
+```
 
-# 5. Launch server
+### 5. Launch Application
+
+```bash
+# Run both Backend API server & Frontend UI concurrently
 bun run dev
 ```
 
-🎉 **Server running at** `http://localhost:3000`
+- **Backend API**: `http://localhost:3000`
+- **Frontend UI**: `http://localhost:5173`
+- **Demo Admin Credentials**: `admin@example.com` / `admin123`
+- **Demo User Credentials**: `user@example.com` / `user123`
 
-### Verify Installation
+---
+
+## 📖 API Reference & Example Workflows
+
+### ⚡ Agent Natural Language Chat
+
+`POST /api/agents/chat`
 
 ```bash
-# Health check
-curl http://localhost:3000/health
-
-# View all capabilities
-curl http://localhost:3000/api/agents/capabilities
+curl -X POST http://localhost:3000/api/agents/chat \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <YOUR_JWT_TOKEN>" \
+  -d '{"message": "@project_tracker list all active sites"}'
 ```
 
----
+### 🌐 LangGraph Company Control Super Orchestrator
 
-## 🔑 Configuration
-
-```env
-# Server
-PORT=3000
-NODE_ENV=development
-
-# Database
-MONGODB_URI=mongodb://localhost:27017/multi-ai-agency
-MONGODB_DB_NAME=multi-ai-agency
-
-# Cache (Optional)
-REDIS_HOST=localhost
-REDIS_PORT=6379
-
-# AI (Optional - enables natural language)
-GOOGLE_API_KEY=your_api_key
-
-# Email (Optional)
-SMTP_HOST=smtp.gmail.com
-SMTP_PORT=587
-SMTP_USER=your_email
-SMTP_PASS=your_app_password
-```
-
----
-
-## 📊 Development Status
-
-### ✅ Completed (v1.0)
-- [x] Multi-agent architecture (3 departments)
-- [x] 25+ specialized AI tools
-- [x] Intelligent agent routing
-- [x] Export to CSV/Excel/PDF
-- [x] Email integration
-- [x] Database seeding
-- [x] Workflow automation
-
-### � Roadmap
-- [ ] **LangGraph Workflows** - Multi-step task automation
-- [ ] **CrewAI Integration** - Multi-agent collaboration
-- [ ] **Advanced NLP** - Natural language understanding
-- [ ] **Authentication** - JWT & role-based access
-- [ ] **Frontend Dashboard** - React-based UI
-- [ ] **Mobile App** - React Native
-
----
-
-## 🐳 Docker Commands
+`POST /api/workflows/langgraph/company-control`
 
 ```bash
-docker-compose up -d      # Start databases
-docker-compose down       # Stop databases
-docker-compose logs -f    # View logs
-docker-compose down -v    # Reset databases
+curl -X POST http://localhost:3000/api/workflows/langgraph/company-control \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <YOUR_JWT_TOKEN>" \
+  -d '{"context":{"message":"Onboard Sarah as engineer and check steel beam stock"}}'
+```
+
+### 📊 Available REST Endpoints
+
+| Endpoint | Method | Description |
+|---|---|---|
+| `/api/auth/login` | `POST` | Authenticate user & receive JWT token |
+| `/api/agents/capabilities` | `GET` | Retrieve system capabilities & active tools |
+| `/api/agents/chat` | `POST` | Execute natural language query via Intelligent Router |
+| `/api/hr/employees` | `GET/POST/PUT/DELETE` | Full CRUD operations for workforce directory |
+| `/api/construction/projects` | `GET/POST/PUT/DELETE` | Full CRUD operations for construction sites |
+| `/api/manufacturing/inventory` | `GET/POST/PUT/DELETE` | Full CRUD operations for plant inventory |
+| `/api/workflows/list` | `GET` | List available LangGraph StateGraph workflows |
+| `/api/files/:type/:filename` | `GET` | Download generated CSV, Excel, or PDF reports |
+
+---
+
+## 📂 Repository Structure
+
+```
+.
+├── frontend/                 # React 18 + Vite + TailwindCSS UI Application
+│   ├── src/
+│   │   ├── components/       # Department Hubs (HR, Construction, Manufacturing, Workflow, Toast)
+│   │   ├── App.tsx           # Full-screen Unified Intelligence Terminal
+│   │   └── main.tsx          # ToastProvider & React root
+├── src/                      # Elysia.js Backend Application
+│   ├── agents/               # Domain Agents & Intelligent Agent Router
+│   ├── config/               # Logger, env, and capability configurations
+│   ├── db/                   # MongoDB client, text indexes, & Redis connection
+│   ├── routes/               # API endpoint route handlers
+│   ├── services/             # Groq LLM & LM Studio AI integration
+│   ├── tools/                # 16 specialized domain & exporter tools
+│   ├── workflows/langgraph/  # 6 LangGraph StateGraph enterprise workflows
+│   └── seed.ts               # Enterprise database seeder
+├── docker-compose.yml        # Local MongoDB & Redis stack
+├── AGENTS.md                 # Agent architecture & tool specifications
+├── v2-work.md                # 2-Phase V2 Swarm Engine roadmap
+└── README.md                 # Project documentation
 ```
 
 ---
 
-## 📖 Documentation
+## 🤝 Contributing to Open Source
 
-| Document | Description |
-|----------|-------------|
-| `implementation_plan.md` | Detailed technical roadmap |
-| `idea.md` | Future features & vision |
-| `.env.example` | Configuration reference |
-
----
-
-## 🏆 Why Choose This Solution?
-
-| Feature | Traditional Software | Our AI Agent |
-|---------|---------------------|--------------|
-| **Learning Curve** | Weeks of training | Natural language - no training needed |
-| **Cross-Department** | Separate systems | Unified intelligence |
-| **Reporting** | Manual, hours | Automated, seconds |
-| **Customization** | Expensive consultants | Self-adapting AI |
-| **Scalability** | License per user | Unlimited queries |
-
----
-
-## 🤝 Contributing
+Contributions are warmly welcomed! Please follow these steps:
 
 1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing`)
-3. Commit changes (`git commit -m 'Add amazing feature'`)
-4. Push to branch (`git push origin feature/amazing`)
-5. Open a Pull Request
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Verify TypeScript compilation (`bun test` and `npx tsc --noEmit`)
+5. Push to the branch (`git push origin feature/amazing-feature`)
+6. Open a Pull Request
 
 ---
 
 ## 📝 License
 
-MIT License - Build something amazing.
-
----
+Distributed under the **MIT License**. See `LICENSE` for more information.
 
 <div align="center">
 
-### **Ready to Transform Your Construction Operations?**
-
-**[🚀 Get Started](#-quick-start)** • **[📖 Documentation](#-documentation)** • **[🤝 Contribute](#-contributing)**
-
 ---
 
-*Built with ❤️ for the Construction Industry*
+### **Sponsored & Developed by Data Daur AI & ERP Consulting**
+
+🌐 **[www.datadaur.com](https://www.datadaur.com)** • ✉️ **[info@datadaur.com](mailto:info@datadaur.com)**
+
+*Built with ❤️ for the Global Construction & Industrial Sector*
 
 </div>
