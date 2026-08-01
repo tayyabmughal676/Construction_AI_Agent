@@ -204,6 +204,7 @@ curl -X POST http://localhost:3000/api/workflows/langgraph/company-control \
 │   └── seed.ts               # Enterprise database seeder
 ├── docker-compose.yml        # Local MongoDB & Redis stack
 ├── AGENTS.md                 # Agent architecture & tool specifications
+├── CHANGELOG.md              # Project version release history
 ├── v2-work.md                # 2-Phase V2 Swarm Engine roadmap
 └── README.md                 # Project documentation
 ```
