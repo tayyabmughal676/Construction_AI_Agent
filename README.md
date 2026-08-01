@@ -14,7 +14,7 @@
 
 *Eliminating the **$177 Billion Annual Loss** in Construction Operations through Autonomous AI Multi-Agent Orchestration.*
 
-[🏢 About Data Daur](#-sponsored--developed-by) • [🚀 Quick Start](#-quick-start) • [✨ Key Features](#-key-features) • [🏛️ Architecture](#-system-architecture) • [📖 API Reference](#-api-reference)
+[🏢 About Data Daur](#-sponsored--developed-by) • [🖼️ UI Showcase](#-interface--ux-showcase) • [🚀 Quick Start](#-quick-start) • [✨ Key Features](#-key-features) • [🏛️ Architecture](#-system-architecture)
 
 ---
 
@@ -36,6 +36,56 @@ This open-source project is proudly sponsored, engineered, and maintained by **[
 The **Construction AI Agent System** is a production-ready, open-source multi-agent platform designed to bridge information silos and automate operations across **Construction**, **Manufacturing**, and **HR** departments. 
 
 Using an **Intelligent NLP Router (Groq LLM + LM Studio Fallback)** alongside **LangGraph StateGraph Workflows**, the system decomposes complex user queries (*"Onboard Sarah as an engineer, order 500 steel beams, and estimate site timeline"*) into parallel or sequential execution tasks across specialized AI agents.
+
+---
+
+## 🖼️ Interface & UX Showcase
+
+<div align="center">
+
+### 💬 1. Unified Intelligence Terminal & `@`-Mention Autocomplete
+*Full-screen dark mode ChatGPT-style terminal with `@` tool autocomplete, voice-to-text speech input, and multi-thread session switcher.*
+
+![Unified Intelligence Terminal](screenshots/s1.png)
+
+<br/>
+
+### 👥 2. HR Workforce Directory Hub
+*Interactive employee directory featuring Employee IDs (`EMP001`), live search filtering, and CRUD management modals.*
+
+| Workforce Directory Overview | Add & Edit Employee Modal |
+|:----------------------------:|:-------------------------:|
+| ![HR Hub Overview](screenshots/s2.png) | ![HR Modal View](screenshots/s2.1.png) |
+
+<br/>
+
+### 🏗️ 3. Site Terminal — Construction Hub
+*Real-time construction project tracking featuring Project IDs (`PRJ-001`), site locations, budgets, and visual progress bars.*
+
+![Construction Site Terminal](screenshots/s3.png)
+
+<br/>
+
+### 🏭 4. Fabrication Node — Manufacturing Hub
+*Plant inventory management featuring SKUs (`STEEL-001`), stock level controls, unit costs, and live OEE performance metrics.*
+
+![Manufacturing Fabrication Node](screenshots/s4.png)
+
+<br/>
+
+### 🌐 5. LangGraph Enterprise Workflow Center
+*Multi-step StateGraph orchestration wizard for executing autonomous cross-department enterprise workflows.*
+
+![LangGraph Workflow Wizard](screenshots/s5.png)
+
+<br/>
+
+### 🔔 6. Toast Notifications & In-Chat File Downloads
+*Real-time floating animated alerts (success, error, info, warning) and interactive file download cards for CSV, Excel, and PDF reports.*
+
+![Toast & Downloads](screenshots/s6.png)
+
+</div>
 
 ---
 
@@ -188,11 +238,18 @@ curl -X POST http://localhost:3000/api/workflows/langgraph/company-control \
 
 ```
 .
-├── frontend/                 # React 18 + Vite + TailwindCSS UI Application
+├── frontend/                 # React 19 + Vite + TailwindCSS UI Application
 │   ├── src/
 │   │   ├── components/       # Department Hubs (HR, Construction, Manufacturing, Workflow, Toast)
 │   │   ├── App.tsx           # Full-screen Unified Intelligence Terminal
 │   │   └── main.tsx          # ToastProvider & React root
+├── screenshots/              # UI/UX Screenshots & Gallery
+│   ├── s1.png                # Intelligence Terminal & Autocomplete
+│   ├── s2.png / s2.1.png     # HR Workforce Hub & Modals
+│   ├── s3.png                # Site Terminal (Construction)
+│   ├── s4.png                # Fabrication Node (Manufacturing)
+│   ├── s5.png                # LangGraph Workflow Center
+│   └── s6.png                # Toast Alerts & Downloads
 ├── src/                      # Elysia.js Backend Application
 │   ├── agents/               # Domain Agents & Intelligent Agent Router
 │   ├── config/               # Logger, env, and capability configurations
@@ -234,7 +291,7 @@ Distributed under the **MIT License**. See `LICENSE` for more information.
 
 ### **Sponsored & Developed by Data Daur AI & ERP Consulting**
 
-🌐 **[www.datadaur.com](https://www.datadaur.com)** • ✉️ **[info@datadaur.com](mailto:info@datadaur.com)**
+🌐 **[www.datadaur.com](https://www.datadaur.com)** • ✉️ **[contact@datadaur.com](mailto:contact@datadaur.com)**
 
 *Built with ❤️ for the Global Construction & Industrial Sector*
 

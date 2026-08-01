@@ -5,13 +5,13 @@
 
 [![React](https://img.shields.io/badge/React-v19.2-blue?logo=react)](https://react.dev)
 [![Vite](https://img.shields.io/badge/Vite-v8.2-purple?logo=vite)](https://vitejs.dev)
-[![TailwindCSS](https://img.shields.io/badge/TailwindCSS-v4.3-38bdf8?logo=tailwindcss)](https://tailwindcss.com)
+[![TailwindCSS](https://img.shields.io/badge/TailwindCSS-v3.4-38bdf8?logo=tailwindcss)](https://tailwindcss.com)
 [![Framer Motion](https://img.shields.io/badge/Framer_Motion-v12.4-black)](https://framer.com/motion)
 [![Sponsored & Developed by Data Daur](https://img.shields.io/badge/Sponsored%20%26%20Developed%20By-Data%20Daur%20AI%20%26%20ERP%20Consulting-blue?style=for-the-badge&logo=shield)](https://www.datadaur.com)
 
 *Unified web application interface for the Construction AI Multi-Agent Platform.*
 
-[🚀 Quick Start](#-quick-start) • [✨ Key UI Features](#-key-ui-features) • [🧩 Component Architecture](#-component-architecture) • [🧪 Testing](#-testing--quality-assurance)
+[🖼️ UI Showcase](#-interface--ux-showcase) • [🚀 Quick Start](#-quick-start) • [✨ Key UI Features](#-key-ui-features) • [🧩 Component Architecture](#-component-architecture)
 
 ---
 
@@ -19,9 +19,59 @@
 
 ## 📌 Overview
 
-The **Construction AI Agent Frontend** is a modern, high-performance web interface built with **React 19**, **Vite 8**, **TailwindCSS 4**, and **Framer Motion 12**. 
+The **Construction AI Agent Frontend** is a modern, high-performance web interface built with **React 19**, **Vite 8**, **TailwindCSS 3.4**, and **Framer Motion 12**. 
 
 It provides an intuitive ChatGPT-style **Unified Intelligence Terminal** alongside dedicated management hubs for **Construction Site Operations**, **Manufacturing Plant Inventory**, **HR Workforce Directory**, and **LangGraph StateGraph Workflows**.
+
+---
+
+## 🖼️ Interface & UX Showcase
+
+<div align="center">
+
+### 💬 1. Unified Intelligence Terminal & `@`-Mention Autocomplete
+*Full-screen dark mode ChatGPT-style terminal with `@` tool autocomplete, voice-to-text speech input, and multi-thread session switcher.*
+
+![Unified Intelligence Terminal](../screenshots/s1.png)
+
+<br/>
+
+### 👥 2. HR Workforce Directory Hub
+*Interactive employee directory featuring Employee IDs (`EMP001`), live search filtering, and CRUD management modals.*
+
+| Workforce Directory Overview | Add & Edit Employee Modal |
+|:----------------------------:|:-------------------------:|
+| ![HR Hub Overview](../screenshots/s2.png) | ![HR Modal View](../screenshots/s2.1.png) |
+
+<br/>
+
+### 🏗️ 3. Site Terminal — Construction Hub
+*Real-time construction project tracking featuring Project IDs (`PRJ-001`), site locations, budgets, and visual progress bars.*
+
+![Construction Site Terminal](../screenshots/s3.png)
+
+<br/>
+
+### 🏭 4. Fabrication Node — Manufacturing Hub
+*Plant inventory management featuring SKUs (`STEEL-001`), stock level controls, unit costs, and live OEE performance metrics.*
+
+![Manufacturing Fabrication Node](../screenshots/s4.png)
+
+<br/>
+
+### 🌐 5. LangGraph Enterprise Workflow Center
+*Multi-step StateGraph orchestration wizard for executing autonomous cross-department enterprise workflows.*
+
+![LangGraph Workflow Wizard](../screenshots/s5.png)
+
+<br/>
+
+### 🔔 6. Toast Notifications & In-Chat File Downloads
+*Real-time floating animated alerts (success, error, info, warning) and interactive file download cards for CSV, Excel, and PDF reports.*
+
+![Toast & Downloads](../screenshots/s6.png)
+
+</div>
 
 ---
 
