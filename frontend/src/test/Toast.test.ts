@@ -28,10 +28,10 @@ describe('Toast Component & Logic', () => {
             }
         };
 
-        expect(getStyle('success').icon).toBe('🟢');
-        expect(getStyle('error').icon).toBe('🔴');
-        expect(getStyle('warning').icon).toBe('🟡');
-        expect(getStyle('info').icon).toBe('⚡');
+        expect(getStyle('success').bg).toContain('emerald');
+        expect(getStyle('error').bg).toContain('rose');
+        expect(getStyle('warning').bg).toContain('amber');
+        expect(getStyle('info').bg).toContain('slate');
     });
 
     it('should cap active toasts queue to 5 items', () => {

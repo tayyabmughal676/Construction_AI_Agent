@@ -51,6 +51,14 @@ class MongoDB {
                 category: 'text',
             }, { name: 'InventoryTextIndex', background: true }).catch(() => {});
 
+            // Text index for knowledge base search
+            await this.db.collection('knowledge').createIndex({
+                title: 'text',
+                content: 'text',
+                tags: 'text',
+                category: 'text',
+            }, { name: 'KnowledgeTextIndex', background: true }).catch(() => {});
+
             logger.info('✅ MongoDB text indexes verified/created');
         } catch (err) {
             logger.warn({ err }, 'Warning creating MongoDB indexes');

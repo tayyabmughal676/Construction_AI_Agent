@@ -7,6 +7,7 @@ import { EquipmentMaintenanceTool } from '../tools/manufacturing/EquipmentMainte
 import { CSVGeneratorTool } from '../tools/utils/CSVGeneratorTool';
 import { ExcelGeneratorTool } from '../tools/utils/ExcelGeneratorTool';
 import { PDFGeneratorTool } from '../tools/utils/PDFGeneratorTool';
+import { KnowledgeBaseTool } from '../tools/utils/KnowledgeBaseTool';
 import { logger } from '../config/logger';
 
 // --- Intent Definitions ---
@@ -38,6 +39,7 @@ export class ManufacturingAgent extends BaseAgent {
         this.registerTool(new CSVGeneratorTool());
         this.registerTool(new ExcelGeneratorTool());
         this.registerTool(new PDFGeneratorTool());
+        this.registerTool(new KnowledgeBaseTool());
 
         this.initializeIntents();
     }
@@ -185,6 +187,35 @@ export class ManufacturingAgent extends BaseAgent {
         const messageLower = message.toLowerCase();
 
         try {
+            // Direct Tool Execution via Intelligent Intent Layer
+            if (context?.toolName && this.getTools().some(t => t.name === context.toolName)) {
+                logger.info({ toolName: context.toolName, action: context.action }, 'Manufacturing Agent executing tool via Intelligent Intent Layer');
+                const res = await this.executeTool(context.toolName, context);
+                let formattedMessage = '';
+                if (res.success) {
+                    if (typeof res.data === 'string') {
+                        formattedMessage = res.data;
+                    } else if (res.data?.message) {
+                        formattedMessage = `✅ ${res.data.message}`;
+                    } else if (res.data?.records) {
+                        formattedMessage = `🔧 **Maintenance Records (${res.data.summary?.total || res.data.records.length})**:\n\n` +
+                            res.data.records.map((r: any) => `• Equipment ${r.equipmentId || 'CNC-Plasma-01'}: ${r.maintenanceType || 'preventive'} [${r.status || 'scheduled'}]`).join('\n');
+                    } else {
+                        formattedMessage = `✅ Executed ${context.toolName} successfully:\n` + JSON.stringify(res.data, null, 2);
+                    }
+                } else {
+                    formattedMessage = `❌ ${res.error}`;
+                }
+
+                return {
+                    sessionId,
+                    department: 'manufacturing',
+                    message: formattedMessage,
+                    toolsUsed: [context.toolName],
+                    data: res.data,
+                } as AgentResponse;
+            }
+
             // 1. Try to match by LLM action first
             let intent = detection?.action ? this.intents.find(i => i.action === detection.action) : null;
 

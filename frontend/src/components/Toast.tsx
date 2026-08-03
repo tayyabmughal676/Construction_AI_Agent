@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { CheckCircle2, AlertCircle, AlertTriangle, Info, X } from 'lucide-react';
 
 export type ToastType = 'success' | 'error' | 'info' | 'warning';
 
@@ -39,25 +40,29 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       case 'success':
         return {
           bg: 'bg-emerald-950/90 border-emerald-500/40 text-emerald-200',
-          icon: '🟢',
+          icon: CheckCircle2,
+          iconColor: 'text-emerald-400',
           badge: 'bg-emerald-500/20 text-emerald-400',
         };
       case 'error':
         return {
           bg: 'bg-rose-950/90 border-rose-500/40 text-rose-200',
-          icon: '🔴',
+          icon: AlertCircle,
+          iconColor: 'text-rose-400',
           badge: 'bg-rose-500/20 text-rose-400',
         };
       case 'warning':
         return {
           bg: 'bg-amber-950/90 border-amber-500/40 text-amber-200',
-          icon: '🟡',
+          icon: AlertTriangle,
+          iconColor: 'text-amber-400',
           badge: 'bg-amber-500/20 text-amber-400',
         };
       default:
         return {
           bg: 'bg-slate-900/95 border-purple-500/40 text-purple-200',
-          icon: '⚡',
+          icon: Info,
+          iconColor: 'text-purple-400',
           badge: 'bg-purple-500/20 text-purple-400',
         };
     }
@@ -72,6 +77,7 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         <AnimatePresence mode="popLayout">
           {toasts.map((t) => {
             const style = getStyle(t.type);
+            const IconComp = style.icon;
             return (
               <motion.div
                 key={t.id}
@@ -81,7 +87,7 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                 transition={{ duration: 0.25, ease: 'easeOut' }}
                 className={`pointer-events-auto p-4 rounded-2xl border backdrop-blur-xl shadow-2xl flex items-start gap-3 ${style.bg}`}
               >
-                <span className="text-lg leading-none mt-0.5">{style.icon}</span>
+                <IconComp className={`w-5 h-5 shrink-0 mt-0.5 ${style.iconColor}`} />
                 <div className="flex-1 min-w-0">
                   {t.title && (
                     <h4 className="text-xs font-bold uppercase tracking-wider mb-0.5">{t.title}</h4>
@@ -92,7 +98,7 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                   onClick={() => removeToast(t.id)}
                   className="text-slate-400 hover:text-white text-xs font-bold p-0.5 rounded transition-colors"
                 >
-                  ✕
+                  <X className="w-4 h-4" />
                 </button>
               </motion.div>
             );

@@ -11,16 +11,17 @@ The Construction AI Agent System features a modular multi-agent architecture des
 
 ### Agent Registry
 - **AgentRegistry**: Singleton registry managing all active agents (`ConstructionAgent`, `HRAgent`, `ManufacturingAgent`).
-- **BaseAgent**: Abstract base class providing common functionality for tool execution, parameter validation, and logging.
-- **Intelligent Router**: Routes user queries to the correct agent using Groq LLM with HTTP 429 exponential backoff retry (primary), LM Studio (fallback), keyword detection, or unified multi-agent system fallback.
+- **BaseAgent**: Abstract base class providing common functionality for defensive tool execution, parameter validation, and structured logging.
+- **Dynamic Intelligence Intent Layer**: Inspects live tool schemas from `AgentRegistry`, executing zero-shot LLM intent classification and parameter extraction with automatic action normalization.
+- **Intelligent Router**: Routes user queries to the correct agent using Groq LLM with HTTP 429 exponential backoff retry (primary), LM Studio (fallback), or keyword fallback.
 
 ### Agents Overview
 
 | Agent | Department | Status | Tools Count | Intents Count | Hub Status |
 |-------|------------|--------|-------------|---------------|------------|
-| **ConstructionAgent** | Construction | ✅ Active | 7 (incl. export) | 9 | ✅ Full CRUD |
-| **ManufacturingAgent** | Manufacturing | ✅ Active | 7 (incl. export) | 9 | ✅ Full CRUD |
-| **HRAgent** | HR | ✅ Active | 6 | 9 | ✅ Full CRUD |
+| **ConstructionAgent** | Construction | ✅ Active | 8 (incl. export & KB) | 9 | ✅ Full CRUD |
+| **ManufacturingAgent** | Manufacturing | ✅ Active | 8 (incl. export & KB) | 9 | ✅ Full CRUD |
+| **HRAgent** | HR | ✅ Active | 7 (incl. export & KB) | 9 | ✅ Full CRUD |
 
 ---
 

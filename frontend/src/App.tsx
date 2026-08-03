@@ -1,12 +1,22 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { 
+  Bot, User, Cpu, Building2, Users, Factory, GitBranch, Plus, Pin, Trash2, 
+  Mic, MicOff, Send, Download, ShieldAlert, CheckCircle2, Search, FileText, 
+  Sparkles, Settings, LogOut, ChevronRight, AlertTriangle, Activity, 
+  TrendingUp, Briefcase, Calendar, DollarSign, Layers, Boxes, FileSpreadsheet, 
+  Play, CheckSquare, Wrench, ShieldCheck, Terminal, Menu, X, Zap
+} from 'lucide-react'
 import HR from './components/HR'
 import Construction from './components/Construction'
 import Manufacturing from './components/Manufacturing'
 import Workflow from './components/Workflow'
 import { useToast } from './components/Toast'
+import { MessageOutlineNav } from './components/MessageOutlineNav'
+import { DeleteModal } from './components/DeleteModal'
+import { ApprovalModal } from './components/ApprovalModal'
 
-interface Detection {
+export interface Detection {
   department?: string;
   confidence?: number;
   action?: string;
@@ -14,7 +24,7 @@ interface Detection {
   method?: string;
 }
 
-interface Message {
+export interface Message {
   id: string;
   text: string;
   from: 'user' | 'bot';
@@ -25,19 +35,19 @@ interface Message {
   data?: any;
 }
 
-type View = 'chat' | 'hr' | 'construction' | 'manufacturing' | 'workflow'
+export type View = 'chat' | 'hr' | 'construction' | 'manufacturing' | 'workflow'
 
-type AuthView = 'login' | 'signup'
+export type AuthView = 'login' | 'signup'
 
 interface AgentCapabilities {
   registered_departments: string[];
   capabilities: Record<string, string>;
 }
 
-const DEPT_ICONS_MAP: Record<string, string> = {
-  construction: '🏗️',
-  hr: '👥',
-  manufacturing: '🏭',
+const DEPT_ICONS_MAP: Record<string, any> = {
+  construction: Building2,
+  hr: Users,
+  manufacturing: Factory,
 }
 
 const DEPT_LABELS: Record<string, string> = {
@@ -64,21 +74,21 @@ const DEPT_TEXT: Record<string, string> = {
   manufacturing: 'text-blue-400',
 }
 
-const NAV_ITEMS: { key: View; label: string; icon: string; desc: string }[] = [
-  { key: 'chat', label: 'Intelligence Terminal', icon: '⚡', desc: 'Multi-agent AI chat' },
-  { key: 'hr', label: 'HR Hub', icon: '👥', desc: 'Workforce directory' },
-  { key: 'construction', label: 'Site Terminal', icon: '🏗️', desc: 'Project management' },
-  { key: 'manufacturing', label: 'Fabrication Node', icon: '🏭', desc: 'Inventory & production' },
-  { key: 'workflow', label: 'Workflow Center', icon: '🔄', desc: 'LangGraph orchestration' },
+const NAV_ITEMS: { key: View; label: string; icon: any; desc: string }[] = [
+  { key: 'chat', label: 'Intelligence Terminal', icon: Terminal, desc: 'Multi-agent AI chat' },
+  { key: 'hr', label: 'HR Hub', icon: Users, desc: 'Workforce directory' },
+  { key: 'construction', label: 'Site Terminal', icon: Building2, desc: 'Project management' },
+  { key: 'manufacturing', label: 'Fabrication Node', icon: Factory, desc: 'Inventory & production' },
+  { key: 'workflow', label: 'Workflow Center', icon: GitBranch, desc: 'LangGraph orchestration' },
 ]
 
 const SUGGESTION_CHIPS = [
-  { text: 'Show all projects', icon: '📋' },
-  { text: 'Register a new employee', icon: '👤' },
-  { text: 'Check inventory levels', icon: '📦' },
-  { text: 'Generate safety checklist', icon: '🛡️' },
-  { text: 'Request leave for EMP001', icon: '🏖️' },
-  { text: 'Calculate material costs for steel', icon: '💰' },
+  { text: 'Show all projects', icon: Building2 },
+  { text: 'Register a new employee', icon: Users },
+  { text: 'Check inventory levels', icon: Boxes },
+  { text: 'Generate safety checklist', icon: ShieldCheck },
+  { text: 'Request leave for EMP001', icon: Calendar },
+  { text: 'Calculate material costs for steel', icon: DollarSign },
 ]
 
 const DEPT_COLOR_MAP: Record<string, string> = {
@@ -101,11 +111,12 @@ interface ToolItem {
   dept: string;
 }
 
-interface Thread {
+export interface Thread {
   id: string;
   title: string;
   updatedAt: number;
   messages: Message[];
+  isPinned?: boolean;
 }
 
 function App() {
@@ -138,6 +149,17 @@ function App() {
     }
   })
   const [activeThreadId, setActiveThreadId] = useState<string>('default')
+  const [deleteModalThread, setDeleteModalThread] = useState<Thread | null>(null)
+
+  // Sorted threads (pinned threads at top)
+  const sortedThreads = useMemo(() => {
+    return [...threads].sort((a, b) => {
+      if (a.isPinned && !b.isPinned) return -1
+      if (!a.isPinned && b.isPinned) return 1
+      return b.updatedAt - a.updatedAt
+    })
+  }, [threads])
+
   const chatEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const mentionRef = useRef<HTMLDivElement>(null)
@@ -189,6 +211,7 @@ function App() {
       title: `Thread #${threads.length + 1}`,
       updatedAt: Date.now(),
       messages: [],
+      isPinned: false,
     }
     setThreads(prev => [newThread, ...prev])
     setActiveThreadId(newId)
@@ -202,22 +225,41 @@ function App() {
     setMessages(target ? target.messages : [])
   }
 
-  const deleteThread = (id: string, e: React.MouseEvent) => {
+  const togglePinThread = (id: string, e: React.MouseEvent) => {
     e.stopPropagation()
+    setThreads(prev => prev.map(t => {
+      if (t.id === id) {
+        const isPinned = !t.isPinned
+        showToast(isPinned ? 'Thread pinned to top' : 'Thread unpinned', 'info')
+        return { ...t, isPinned }
+      }
+      return t
+    }))
+  }
+
+  const requestDeleteThread = (thread: Thread, e: React.MouseEvent) => {
+    e.stopPropagation()
+    setDeleteModalThread(thread)
+  }
+
+  const confirmDeleteThread = () => {
+    if (!deleteModalThread) return
+    const id = deleteModalThread.id
     if (threads.length <= 1) {
       setMessages([])
-      setThreads([{ id: 'default', title: 'Main Chat Thread', updatedAt: Date.now(), messages: [] }])
+      setThreads([{ id: 'default', title: 'Main Chat Thread', updatedAt: Date.now(), messages: [], isPinned: false }])
       setActiveThreadId('default')
       showToast('Reset main conversation thread', 'info')
-      return
+    } else {
+      const updated = threads.filter(t => t.id !== id)
+      setThreads(updated)
+      if (activeThreadId === id) {
+        setActiveThreadId(updated[0].id)
+        setMessages(updated[0].messages)
+      }
+      showToast('Thread deleted', 'info')
     }
-    const updated = threads.filter(t => t.id !== id)
-    setThreads(updated)
-    if (activeThreadId === id) {
-      setActiveThreadId(updated[0].id)
-      setMessages(updated[0].messages)
-    }
-    showToast('Thread deleted', 'info')
+    setDeleteModalThread(null)
   }
 
   // Voice-to-Text Speech Recognition
@@ -370,6 +412,47 @@ function App() {
     setMessages([])
   }
 
+  // Engine mode state (v1 REST vs v2 LangGraph Swarm)
+  const [engineMode, setEngineMode] = useState<'v1' | 'v2'>('v2')
+  const [approvalModal, setApprovalModal] = useState<{
+    sessionId: string;
+    amount: number;
+    description: string;
+  } | null>(null)
+
+  const handleApproveSwarm = async () => {
+    if (!approvalModal) return;
+    try {
+      showToast('Approving high-value purchase order...', 'info', 'Human Approval Sent');
+      const response = await fetch('/api/v2/graph/approve', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token && { Authorization: `Bearer ${token}` }),
+        },
+        body: JSON.stringify({ sessionId: approvalModal.sessionId }),
+      });
+      const data: any = await response.json();
+      if (response.ok && data.success) {
+        showToast('Swarm execution approved and completed!', 'success', 'StateGraph Resumed');
+        setApprovalModal(null);
+
+        const botMessage: Message = {
+          id: Date.now().toString(),
+          text: data.finalResponse || 'Swarm execution resumed and finished successfully.',
+          from: 'bot',
+          department: 'SYSTEM',
+          timestamp: new Date(),
+        };
+        updateCurrentThreadMessages([...messages, botMessage]);
+      } else {
+        showToast(data.error || 'Failed to approve swarm execution.', 'error');
+      }
+    } catch {
+      showToast('Error sending approval to server.', 'error');
+    }
+  };
+
   const sendMessage = async (overrideText?: string) => {
     const text = overrideText || input.trim()
     if (!text) return
@@ -387,27 +470,61 @@ function App() {
     setIsLoading(true)
 
     try {
-      const response = await fetch('/api/agents/chat', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token && { Authorization: `Bearer ${token}` })
-        },
-        body: JSON.stringify({ message: text }),
-      })
-      const data: any = await response.json()
+      if (engineMode === 'v2') {
+        // v2.x LangGraph Autonomous Swarm Endpoint
+        showToast('Dispatching query to LangGraph Swarm Engine...', 'info', 'v2.x Swarm Graph');
+        const response = await fetch('/api/v2/graph/chat', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token && { Authorization: `Bearer ${token}` })
+          },
+          body: JSON.stringify({ message: text }),
+        })
+        const data: any = await response.json()
 
-      const botMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        text: data.message,
-        from: 'bot',
-        department: data.department,
-        toolsUsed: data.toolsUsed,
-        detection: data.detection,
-        timestamp: new Date(),
-        data: data.data,
+        if (data.requiresApproval || data.status === 'paused') {
+          setApprovalModal({
+            sessionId: data.sessionId,
+            amount: data.totalPurchaseCost || 0,
+            description: data.finalResponse || 'High-value purchase order requires human review.',
+          })
+          showToast('Purchase order exceeds $10,000 threshold. Human review required.', 'warning', 'Interrupt Triggered');
+        }
+
+        const botMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          text: data.finalResponse || data.message || 'Swarm execution complete.',
+          from: 'bot',
+          department: data.departments?.[0] || 'SYSTEM',
+          toolsUsed: data.executionTrace?.map((t: any) => t.step),
+          timestamp: new Date(),
+        }
+        updateCurrentThreadMessages([...updatedMsgs, botMessage])
+      } else {
+        // v1.x Standard Direct REST Endpoint
+        const response = await fetch('/api/agents/chat', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token && { Authorization: `Bearer ${token}` })
+          },
+          body: JSON.stringify({ message: text }),
+        })
+        const data: any = await response.json()
+
+        const botMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          text: data.message,
+          from: 'bot',
+          department: data.department,
+          toolsUsed: data.toolsUsed,
+          detection: data.detection,
+          timestamp: new Date(),
+          data: data.data,
+        }
+        updateCurrentThreadMessages([...updatedMsgs, botMessage])
       }
-      updateCurrentThreadMessages([...updatedMsgs, botMessage])
     } catch {
       updateCurrentThreadMessages([...updatedMsgs, {
         id: (Date.now() + 1).toString(),
@@ -451,6 +568,18 @@ function App() {
     }
   }
 
+  const formatTimestamp = (ts: any) => {
+    if (!ts) return ''
+    try {
+      const d = typeof ts === 'string' || typeof ts === 'number' ? new Date(ts) : ts
+      return d instanceof Date && !isNaN(d.getTime())
+        ? d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        : ''
+    } catch {
+      return ''
+    }
+  }
+
   // ─── Auth Screen ───
   if (!isLoggedIn) {
     return (
@@ -465,8 +594,8 @@ function App() {
           className="relative bg-slate-800/60 backdrop-blur-xl border border-slate-700/50 p-8 rounded-2xl shadow-2xl max-w-md w-full"
         >
           <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-construction-gold/10 border border-construction-gold/20 mb-4">
-              <span className="text-3xl">⚡</span>
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-construction-gold/10 border border-construction-gold/20 mb-4 text-construction-gold">
+              <Zap className="w-8 h-8" />
             </div>
             <h1 className="text-2xl font-bold text-white">Construction AI</h1>
             <p className="text-sm text-slate-400 mt-1">Multi-Agent Intelligence Platform</p>
@@ -567,8 +696,8 @@ function App() {
             {/* Sidebar header */}
             <div className="p-4 border-b border-slate-800">
               <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-construction-gold/15 border border-construction-gold/25 flex items-center justify-center">
-                  <span className="text-lg">⚡</span>
+                <div className="w-9 h-9 rounded-xl bg-construction-gold/15 border border-construction-gold/25 flex items-center justify-center text-construction-gold">
+                  <Terminal className="w-5 h-5" />
                 </div>
                 <div className="min-w-0">
                   <h1 className="text-sm font-bold text-white truncate">Construction AI</h1>
@@ -580,7 +709,7 @@ function App() {
             {/* Nav items */}
             <nav className="flex-1 p-3 space-y-4 overflow-y-auto">
               <div className="space-y-1">
-                {NAV_ITEMS.map(({ key, label, icon, desc }) => (
+                {NAV_ITEMS.map(({ key, label, icon: IconComponent, desc }) => (
                   <button
                     key={key}
                     onClick={() => setCurrentView(key)}
@@ -590,7 +719,7 @@ function App() {
                         : 'text-slate-400 hover:bg-slate-800/50 hover:text-white'
                     }`}
                   >
-                    <span className={`text-lg transition-transform ${currentView === key ? 'scale-110' : 'group-hover:scale-110'}`}>{icon}</span>
+                    <IconComponent className={`w-5 h-5 transition-transform ${currentView === key ? 'scale-110 text-construction-gold' : 'group-hover:scale-110 text-slate-400'}`} />
                     <div className="min-w-0">
                       <div className="text-sm font-medium truncate">{label}</div>
                       <div className="text-[10px] text-slate-500 truncate">{desc}</div>
@@ -609,31 +738,44 @@ function App() {
                     <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Conversations</span>
                     <button
                       onClick={createNewThread}
-                      className="p-1 rounded-md text-slate-400 hover:text-construction-gold hover:bg-slate-800 transition-all text-xs flex items-center gap-1"
+                      className="px-2 py-1 rounded-md text-slate-400 hover:text-construction-gold hover:bg-slate-800 transition-all text-xs flex items-center gap-1 font-medium border border-slate-800 hover:border-construction-gold/30"
                       title="New Conversation"
                     >
-                      <span className="font-bold">+</span> New
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>New</span>
                     </button>
                   </div>
-                  <div className="space-y-1 max-h-48 overflow-y-auto">
-                    {threads.map((t) => (
+                  <div className="space-y-1 max-h-48 overflow-y-auto custom-scrollbar">
+                    {sortedThreads.map((t) => (
                       <div
                         key={t.id}
                         onClick={() => switchThread(t.id)}
-                        className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs cursor-pointer transition-all ${
+                        className={`group w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs cursor-pointer transition-all ${
                           activeThreadId === t.id
                             ? 'bg-construction-gold/15 text-white font-medium border border-construction-gold/20'
                             : 'text-slate-400 hover:bg-slate-800/40 hover:text-slate-200'
                         }`}
                       >
-                        <span className="truncate flex-1 pr-2">{t.title}</span>
-                        <button
-                          onClick={(e) => deleteThread(t.id, e)}
-                          className="opacity-0 group-hover:opacity-100 hover:opacity-100 text-slate-500 hover:text-red-400 p-0.5 rounded transition-opacity"
-                          title="Delete thread"
-                        >
-                          ✕
-                        </button>
+                        <div className="flex items-center gap-1.5 min-w-0 flex-1 pr-1">
+                          {t.isPinned && <Pin className="w-3.5 h-3.5 text-construction-gold shrink-0 fill-construction-gold/20" />}
+                          <span className="truncate">{t.title}</span>
+                        </div>
+                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                          <button
+                            onClick={(e) => togglePinThread(t.id, e)}
+                            className={`p-1 rounded transition-all text-xs ${t.isPinned ? 'text-construction-gold hover:text-yellow-400' : 'text-slate-500 hover:text-slate-200'}`}
+                            title={t.isPinned ? 'Unpin Conversation' : 'Pin Conversation to Top'}
+                          >
+                            <Pin className={`w-3.5 h-3.5 ${t.isPinned ? 'fill-construction-gold/20' : ''}`} />
+                          </button>
+                          <button
+                            onClick={(e) => requestDeleteThread(t, e)}
+                            className="text-slate-500 hover:text-red-400 p-1 rounded transition-all text-xs"
+                            title="Delete Conversation"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -645,9 +787,9 @@ function App() {
             <div className="p-3 border-t border-slate-800">
               <button
                 onClick={logout}
-                className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition-all"
+                className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition-all font-medium"
               >
-                <span>🚪</span>
+                <LogOut className="w-4 h-4" />
                 <span>Sign Out</span>
               </button>
             </div>
@@ -664,18 +806,58 @@ function App() {
             className="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-all mr-3"
             title={sidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'}
           >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M3 12h18M3 6h18M3 18h18" />
-            </svg>
+            <Menu className="w-4 h-4" />
           </button>
           <div className="flex items-center gap-2">
-            <span className="text-lg">{NAV_ITEMS.find(n => n.key === currentView)?.icon}</span>
+            {(() => {
+              const currentItem = NAV_ITEMS.find(n => n.key === currentView);
+              const CurrentIcon = currentItem?.icon || Terminal;
+              return <CurrentIcon className="w-5 h-5 text-construction-gold" />;
+            })()}
             <h2 className="text-sm font-semibold text-white">{NAV_ITEMS.find(n => n.key === currentView)?.label}</h2>
           </div>
           <div className="ml-auto flex items-center gap-3">
-            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-green-500/10 border border-green-500/20">
-              <div className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
-              <span className="text-[10px] text-green-400 font-medium uppercase tracking-wider">Live</span>
+            {/* Engine Mode Switcher */}
+            <div className="flex items-center bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs">
+              <button
+                onClick={() => {
+                  setEngineMode('v1')
+                  showToast('Switched engine to v1.x Standard REST', 'info')
+                }}
+                className={`px-2.5 py-1 rounded-lg font-medium transition-all flex items-center gap-1.5 ${
+                  engineMode === 'v1'
+                    ? 'bg-slate-800 text-construction-gold shadow'
+                    : 'text-slate-400 hover:text-slate-200'
+                }`}
+                title="v1.x Standard Direct REST Engine"
+              >
+                <Zap className="w-3.5 h-3.5" />
+                <span>v1.x REST</span>
+              </button>
+              <button
+                onClick={() => {
+                  setEngineMode('v2')
+                  showToast('Switched engine to v2.x LangGraph Swarm', 'success')
+                }}
+                className={`px-2.5 py-1 rounded-lg font-medium transition-all flex items-center gap-1.5 ${
+                  engineMode === 'v2'
+                    ? 'bg-construction-gold text-slate-950 font-bold shadow'
+                    : 'text-slate-400 hover:text-slate-200'
+                }`}
+                title="v2.x Autonomous Multi-Agent Swarm Graph"
+              >
+                <GitBranch className="w-3.5 h-3.5" />
+                <span>v2.x Swarm Graph</span>
+              </button>
+            </div>
+
+            {/* Live System Heartbeat Badge */}
+            <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/25 shadow-sm shadow-emerald-500/10">
+              <div className="relative flex h-2.5 w-2.5 items-center justify-center">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+              </div>
+              <span className="text-[11px] text-emerald-400 font-semibold tracking-wide uppercase">System Live</span>
             </div>
           </div>
         </header>
@@ -694,7 +876,7 @@ function App() {
                     className="text-center max-w-3xl w-full"
                   >
                     <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-construction-gold/20 to-amber-600/5 border border-construction-gold/20 mb-4">
-                      <span className="text-3xl">⚡</span>
+                      <Terminal className="w-8 h-8 text-construction-gold" />
                     </div>
                     <h2 className="text-2xl font-bold text-white mb-1">Unified Intelligence Terminal</h2>
                     <p className="text-slate-400 mb-6 text-sm">
@@ -706,6 +888,7 @@ function App() {
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6 text-left">
                         {capabilities.registered_departments.map((dept) => {
                           const cap = capabilities.capabilities[dept] || '';
+                          const DeptIconComponent = DEPT_ICONS_MAP[dept] || Bot;
                           // Parse tools from capability text
                           const toolLines = cap.split('\n').filter((l: string) => l.trim().startsWith('- '));
                           const tools = toolLines.map((l: string) => {
@@ -722,7 +905,7 @@ function App() {
                               className={`bg-gradient-to-b ${DEPT_BG[dept] || 'from-slate-800/50 to-transparent'} border ${DEPT_BORDER_COLOR[dept] || 'border-slate-700/50'} rounded-xl p-4 transition-all`}
                             >
                               <div className="flex items-center gap-2 mb-3">
-                                <span className="text-xl">{DEPT_ICONS_MAP[dept] || '🤖'}</span>
+                                <DeptIconComponent className={`w-5 h-5 ${DEPT_TEXT[dept] || 'text-white'}`} />
                                 <span className={`text-sm font-bold ${DEPT_TEXT[dept] || 'text-white'}`}>
                                   {DEPT_LABELS[dept] || dept}
                                 </span>
@@ -731,7 +914,7 @@ function App() {
                               <div className="space-y-1.5">
                                 {tools.map((tool: any) => (
                                   <div key={tool.name} className="flex items-start gap-1.5">
-                                    <span className="text-[10px] text-slate-600 mt-0.5">⚙</span>
+                                    <Wrench className="w-3 h-3 text-slate-500 mt-0.5 shrink-0" />
                                     <div className="min-w-0">
                                       <span className="text-[11px] text-slate-300 font-mono">{tool.name}</span>
                                       <p className="text-[10px] text-slate-500 leading-tight truncate">{tool.desc}</p>
@@ -749,16 +932,19 @@ function App() {
                     <div className="mb-2">
                       <p className="text-[10px] text-slate-600 uppercase tracking-wider font-medium mb-2">Quick Actions</p>
                       <div className="grid grid-cols-2 md:grid-cols-3 gap-2 max-w-xl mx-auto">
-                        {SUGGESTION_CHIPS.map((chip) => (
-                          <button
-                            key={chip.text}
-                            onClick={() => sendMessage(chip.text)}
-                            className="flex items-center gap-2 px-3 py-2.5 bg-slate-800/60 hover:bg-slate-700/60 border border-slate-700/50 hover:border-slate-600 rounded-xl text-left transition-all group"
-                          >
-                            <span className="text-sm">{chip.icon}</span>
-                            <span className="text-xs text-slate-300 group-hover:text-white transition-colors leading-tight">{chip.text}</span>
-                          </button>
-                        ))}
+                        {SUGGESTION_CHIPS.map((chip) => {
+                          const ChipIconComponent = chip.icon;
+                          return (
+                            <button
+                              key={chip.text}
+                              onClick={() => sendMessage(chip.text)}
+                              className="flex items-center gap-2 px-3 py-2.5 bg-slate-800/60 hover:bg-slate-700/60 border border-slate-700/50 hover:border-slate-600 rounded-xl text-left transition-all group"
+                            >
+                              <ChipIconComponent className="w-4 h-4 text-construction-gold shrink-0" />
+                              <span className="text-xs text-slate-300 group-hover:text-white transition-colors leading-tight">{chip.text}</span>
+                            </button>
+                          );
+                        })}
                       </div>
                     </div>
                   </motion.div>
@@ -766,9 +952,10 @@ function App() {
               ) : (
                 /* Messages */
                 <div className="max-w-3xl mx-auto w-full px-4 py-6 space-y-6">
-                  {messages.map((msg) => (
+                  {messages.map((msg, index) => (
                     <motion.div
                       key={msg.id}
+                      id={`chat-msg-${msg.id}`}
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.25 }}
@@ -776,14 +963,14 @@ function App() {
                       {msg.from === 'user' ? (
                         /* User message */
                         <div className="flex gap-3 items-start">
-                          <div className="w-8 h-8 rounded-xl bg-construction-gold/20 border border-construction-gold/30 flex items-center justify-center shrink-0 mt-0.5">
-                            <span className="text-xs font-bold text-construction-gold">You</span>
+                          <div className="w-8 h-8 rounded-xl bg-construction-gold/20 border border-construction-gold/30 flex items-center justify-center shrink-0 mt-0.5 text-construction-gold">
+                            <User className="w-4 h-4" />
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 mb-1">
                               <span className="text-sm font-semibold text-white">You</span>
                               {msg.timestamp && (
-                                <span className="text-[10px] text-slate-600">{msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                <span className="text-[10px] text-slate-600">{formatTimestamp(msg.timestamp)}</span>
                               )}
                             </div>
                             <p className="text-sm text-slate-200 leading-relaxed whitespace-pre-line">{msg.text}</p>
@@ -793,18 +980,20 @@ function App() {
                         /* Bot message */
                         <div className={`flex gap-3 items-start rounded-2xl p-4 bg-gradient-to-r ${DEPT_COLOR_MAP[msg.department?.toUpperCase() || ''] || 'from-slate-800/50 to-slate-800/20 border-slate-700/50'} border`}>
                           <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 mt-0.5 ${
-                            msg.department?.toUpperCase() === 'HR' ? 'bg-purple-500/20 border border-purple-500/30' :
-                            msg.department?.toUpperCase() === 'CONSTRUCTION' ? 'bg-amber-500/20 border border-amber-500/30' :
-                            msg.department?.toUpperCase() === 'MANUFACTURING' ? 'bg-blue-500/20 border border-blue-500/30' :
-                            msg.department?.toUpperCase() === 'SYSTEM' ? 'bg-emerald-500/20 border border-emerald-500/30' :
-                            'bg-slate-700 border border-slate-600'
+                            msg.department?.toUpperCase() === 'HR' ? 'bg-purple-500/20 border border-purple-500/30 text-purple-400' :
+                            msg.department?.toUpperCase() === 'CONSTRUCTION' ? 'bg-amber-500/20 border border-amber-500/30 text-amber-400' :
+                            msg.department?.toUpperCase() === 'MANUFACTURING' ? 'bg-blue-500/20 border border-blue-500/30 text-blue-400' :
+                            msg.department?.toUpperCase() === 'SYSTEM' ? 'bg-emerald-500/20 border border-emerald-500/30 text-emerald-400' :
+                            'bg-slate-700 border border-slate-600 text-slate-300'
                           }`}>
-                            <span className="text-sm">
-                              {msg.department?.toUpperCase() === 'HR' ? '👥' :
-                               msg.department?.toUpperCase() === 'CONSTRUCTION' ? '🏗️' :
-                               msg.department?.toUpperCase() === 'MANUFACTURING' ? '🏭' :
-                               msg.department?.toUpperCase() === 'SYSTEM' ? '⚡' : '🤖'}
-                            </span>
+                            {(() => {
+                              const dept = msg.department?.toUpperCase();
+                              const IconComp = dept === 'HR' ? Users :
+                                              dept === 'CONSTRUCTION' ? Building2 :
+                                              dept === 'MANUFACTURING' ? Factory :
+                                              dept === 'SYSTEM' ? Cpu : Bot;
+                              return <IconComp className="w-4 h-4" />;
+                            })()}
                           </div>
                           <div className="flex-1 min-w-0">
                             {/* Agent header with detection badges */}
@@ -813,7 +1002,7 @@ function App() {
                                 {msg.department || 'Agent'}
                               </span>
                               {msg.timestamp && (
-                                <span className="text-[10px] text-slate-600">{msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                <span className="text-[10px] text-slate-600">{formatTimestamp(msg.timestamp)}</span>
                               )}
                               {msg.detection?.action && (
                                 <span className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-white/5 text-slate-400 border border-white/5">
@@ -908,7 +1097,7 @@ function App() {
                                     rel="noopener noreferrer"
                                     className="px-3.5 py-1.5 bg-construction-gold hover:bg-yellow-500 text-black text-xs font-semibold rounded-lg transition-all flex items-center gap-1.5 shrink-0 shadow-md shadow-construction-gold/20"
                                   >
-                                    <span>📥</span>
+                                    <Download className="w-3.5 h-3.5" strokeWidth={2.5} />
                                     <span>Download</span>
                                   </a>
                                 </div>
@@ -921,7 +1110,8 @@ function App() {
                                 <span className="text-[10px] text-slate-600 uppercase tracking-wider font-medium">Tools</span>
                                 {msg.toolsUsed.map(tool => (
                                   <span key={tool} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] bg-construction-gold/8 text-construction-gold border border-construction-gold/15 font-mono">
-                                    <span className="opacity-60">⚙</span> {tool}
+                                    <Wrench className="w-3 h-3 text-construction-gold/70" />
+                                    <span>{tool}</span>
                                   </span>
                                 ))}
                               </div>
@@ -959,6 +1149,9 @@ function App() {
                     </motion.div>
                   )}
 
+                  {/* Vertical Message Navigation Sidebar (ChatGPT-Style Quick Message Jump) */}
+                  <MessageOutlineNav messages={messages} />
+
                   <div ref={chatEndRef} />
                 </div>
               )}
@@ -990,13 +1183,16 @@ function App() {
                           grouped[t.dept].push(t)
                         })
                         let globalIdx = -1
-                        return Object.entries(grouped).map(([dept, tools]) => (
-                          <div key={dept}>
-                            <div className="px-3 py-1.5 bg-slate-900/50">
-                              <span className={`text-[10px] font-bold uppercase tracking-wider ${DEPT_TEXT[dept] || 'text-slate-400'}`}>
-                                {DEPT_ICONS_MAP[dept] || '🤖'} {DEPT_LABELS[dept] || dept}
-                              </span>
-                            </div>
+                        return Object.entries(grouped).map(([dept, tools]) => {
+                          const DeptIcon = DEPT_ICONS_MAP[dept] || Bot;
+                          return (
+                            <div key={dept}>
+                              <div className="px-3 py-1.5 bg-slate-900/50">
+                                <span className={`text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5 ${DEPT_TEXT[dept] || 'text-slate-400'}`}>
+                                  <DeptIcon className="w-3.5 h-3.5 shrink-0" />
+                                  <span>{DEPT_LABELS[dept] || dept}</span>
+                                </span>
+                              </div>
                             {tools.map(tool => {
                               globalIdx++
                               const idx = globalIdx
@@ -1024,8 +1220,9 @@ function App() {
                                 </button>
                               )
                             })}
-                          </div>
-                        ))
+                            </div>
+                          )
+                        })
                       })()}
                     </motion.div>
                   )}
@@ -1053,20 +1250,14 @@ function App() {
                         : 'text-slate-400 hover:text-white hover:bg-slate-700/50'
                     }`}
                   >
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/>
-                      <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
-                      <line x1="12" y1="19" x2="12" y2="22"/>
-                    </svg>
+                    {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
                   </button>
                   <button
                     onClick={() => sendMessage()}
                     disabled={isLoading || !input.trim()}
                     className="absolute right-2 bottom-2 p-2 rounded-xl bg-construction-gold text-black hover:bg-yellow-500 transition-all disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-construction-gold shadow-lg shadow-construction-gold/20"
                   >
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M22 2L11 13" /><path d="M22 2l-7 20-4-9-9-4z" />
-                    </svg>
+                    <Send className="w-4 h-4" strokeWidth={2.5} />
                   </button>
                 </div>
                 <p className="text-[10px] text-slate-600 mt-2 text-center">
@@ -1103,6 +1294,23 @@ function App() {
           </div>
         )}
       </div>
+
+      {/* Human Approval Interrupt Modal for Swarm Graph (PO > $10,000) */}
+      <ApprovalModal
+        modalData={approvalModal}
+        onReject={() => {
+          setApprovalModal(null);
+          showToast('Purchase order rejected by user.', 'warning');
+        }}
+        onApprove={handleApproveSwarm}
+      />
+
+      {/* Delete Conversation Confirmation Modal */}
+      <DeleteModal
+        thread={deleteModalThread}
+        onClose={() => setDeleteModalThread(null)}
+        onConfirm={confirmDeleteThread}
+      />
     </div>
   )
 }

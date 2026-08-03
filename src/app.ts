@@ -27,6 +27,7 @@ import agentRouter from './routes/agents';
 import workflowRouter from './routes/workflows';
 import hrRouter from './routes/hr';
 import manufacturingRouter from './routes/manufacturing';
+import { v2graphRouter } from './routes/v2graph';
 
 // --- Auth Middleware (Handled Inline) ---
 
@@ -269,16 +270,6 @@ app.group('/api', (api) => api
     })
 );
 
-// 7. Not Found and Error Handlers
-app.onError(({ code, error, set }) => {
-    logger.error({
-        error
-    }, 'An unhandled error occurred');
-    set.status = 500;
-    return {
-        error: 'Internal Server Error',
-        message: (error as Error)?.message || 'A server error occurred.',
-    };
-});
+app.use(v2graphRouter);
 
 export default app;

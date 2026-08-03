@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useToast } from './Toast';
+import { Users, Building2, Factory, GitBranch, Rocket, Check, CheckCircle2, XCircle, AlertTriangle, RotateCw, X, Zap } from 'lucide-react';
 
 interface WorkflowItem {
   id: string;
@@ -23,48 +24,13 @@ interface WorkflowProps {
   token: string;
 }
 
-// Default parameter templates for each workflow
-const WORKFLOW_PARAMS: Record<string, { fields: Array<{ key: string; label: string; type: string; defaultValue: string; placeholder?: string }> }> = {
-  employee_onboarding: {
-    fields: [
-      { key: 'firstName', label: 'First Name', type: 'text', defaultValue: 'Sarah', placeholder: 'Enter first name' },
-      { key: 'lastName', label: 'Last Name', type: 'text', defaultValue: 'Connor', placeholder: 'Enter last name' },
-      { key: 'email', label: 'Email', type: 'email', defaultValue: 'sarah.connor@construction-ai.com', placeholder: 'employee@company.com' },
-      { key: 'department', label: 'Department', type: 'text', defaultValue: 'Construction', placeholder: 'e.g. Construction, HR' },
-      { key: 'position', label: 'Position', type: 'text', defaultValue: 'Senior Project Engineer', placeholder: 'Job title' },
-    ]
-  },
-  company_control: {
-    fields: [
-      { key: 'message', label: 'Control Directive', type: 'textarea', defaultValue: 'Analyze current inventory and trigger restock if steel beams are below 1000', placeholder: 'Describe what the orchestrator should do...' },
-    ]
-  },
-  project_kickoff: {
-    fields: [
-      { key: 'projectName', label: 'Project Name', type: 'text', defaultValue: 'Downtown Skybridge Phase 2', placeholder: 'Enter project name' },
-      { key: 'location', label: 'Location', type: 'text', defaultValue: 'Site Delta', placeholder: 'Job site location' },
-      { key: 'budget', label: 'Budget ($)', type: 'number', defaultValue: '18000000', placeholder: 'Project budget' },
-    ]
-  },
-  inventory_restock: {
-    fields: [
-      { key: 'item', label: 'Item Name', type: 'text', defaultValue: 'Steel Beams', placeholder: 'What to restock' },
-      { key: 'quantity', label: 'Quantity', type: 'number', defaultValue: '300', placeholder: 'Units to order' },
-      { key: 'supplier', label: 'Supplier', type: 'text', defaultValue: 'Apex Heavy Metal Ltd', placeholder: 'Supplier company name' },
-    ]
-  },
-  employee_offboarding: {
-    fields: [
-      { key: 'employeeId', label: 'Employee ID', type: 'text', defaultValue: 'EMP003', placeholder: 'e.g. EMP003' },
-      { key: 'reason', label: 'Reason', type: 'text', defaultValue: 'Contract completion', placeholder: 'Reason for departure' },
-    ]
-  },
-  executive_report: {
-    fields: [
-      { key: 'period', label: 'Report Period', type: 'text', defaultValue: 'Q3 2026', placeholder: 'e.g. Q3 2026, July 2026' },
-      { key: 'departments', label: 'Departments (comma separated)', type: 'text', defaultValue: 'HR, Construction, Manufacturing', placeholder: 'Included departments' },
-    ]
-  }
+const PARAM_DEFAULTS: Record<string, Record<string, string>> = {
+  companyControl: { companyName: 'BuildCorp Industries', departmentFilter: 'All' },
+  onboarding: { employeeId: 'EMP001', name: 'Alex Johnson', position: 'Site Engineer', department: 'Construction' },
+  projectKickoff: { projectId: 'PRJ-001', name: 'Skyline Tower Phase 1', budget: '15000000', location: 'Downtown Hub' },
+  inventoryRestock: { sku: 'STEEL-001', itemCode: 'STEEL-001', component: 'Structural Steel Beams', minStock: '500', restockQuantity: '1000' },
+  offboarding: { employeeId: 'EMP001', exitDate: '2026-08-30', reason: 'Resignation' },
+  executiveReport: { month: 'August 2026', includeFinancials: 'true', recipientEmail: 'executives@buildcorp.com' },
 };
 
 const DEPT_COLORS: Record<string, string> = {
@@ -74,11 +40,11 @@ const DEPT_COLORS: Record<string, string> = {
   Multi: 'emerald',
 };
 
-const DEPT_ICONS: Record<string, string> = {
-  HR: '👥',
-  Construction: '🏗️',
-  Manufacturing: '🏭',
-  Multi: '🌐',
+const DEPT_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
+  HR: Users,
+  Construction: Building2,
+  Manufacturing: Factory,
+  Multi: GitBranch,
 };
 
 export default function Workflow({ token }: WorkflowProps) {
@@ -98,36 +64,24 @@ export default function Workflow({ token }: WorkflowProps) {
     const fetchWorkflows = async () => {
       try {
         const response = await fetch('/api/workflows/list', {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
+          headers: { Authorization: `Bearer ${token}` },
         });
-
-        if (!response.ok) {
-          throw new Error('Failed to fetch workflows');
-        }
-
+        if (!response.ok) throw new Error('Failed to fetch workflows');
         const data = await response.json();
         setWorkflows(data.workflows || []);
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'An error occurred');
+        setError(err instanceof Error ? err.message : 'Error fetching workflows');
       } finally {
         setLoading(false);
       }
     };
-
     fetchWorkflows();
   }, [token]);
 
   const openWizard = (wf: WorkflowItem) => {
-    const paramDef = WORKFLOW_PARAMS[wf.id];
-    const defaults: Record<string, string> = {};
-    if (paramDef) {
-      paramDef.fields.forEach(f => { defaults[f.key] = f.defaultValue; });
-    }
-    setWizardParams(defaults);
     setWizardWorkflow(wf);
     setWizardStep(0);
+    setWizardParams({ ...(PARAM_DEFAULTS[wf.id] || {}) });
   };
 
   const closeWizard = () => {
@@ -138,80 +92,86 @@ export default function Workflow({ token }: WorkflowProps) {
 
   const executeWorkflow = async () => {
     if (!wizardWorkflow) return;
-    setWizardStep(2);
-    setExecutingId(wizardWorkflow.id);
-    showToast(`Initializing ${wizardWorkflow.name}...`, 'info', 'LangGraph Executing');
+    const wf = wizardWorkflow;
+    setWizardStep(2); // Running state
+    setExecutingId(wf.id);
 
     try {
-      let body: any = {};
-
-      if (wizardWorkflow.id === 'company_control') {
-        body = { message: wizardParams.message || '' };
-      } else if (wizardWorkflow.id === 'executive_report') {
-        body = {
-          context: {
-            period: wizardParams.period,
-            includeDepartments: (wizardParams.departments || '').split(',').map((s: string) => s.trim())
-          }
-        };
-      } else {
-        const context: Record<string, any> = { ...wizardParams };
-        if (context.budget) context.budget = Number(context.budget);
-        if (context.quantity) context.quantity = Number(context.quantity);
-        body = { context };
-      }
-
-      const response = await fetch(wizardWorkflow.endpoint, {
+      const response = await fetch(wf.endpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(body)
+        body: JSON.stringify(wizardParams),
       });
 
-      const resData = await response.json();
-      setExecutionResult(prev => ({ ...prev, [wizardWorkflow.id]: resData }));
-      setWizardStep(3);
+      const data = await response.json();
 
-      if (resData.success) {
-        showToast(`Workflow ${wizardWorkflow.name} completed successfully!`, 'success', 'StateGraph Complete');
-      } else {
-        showToast(`Workflow ${wizardWorkflow.name} finished with errors.`, 'error', 'StateGraph Issue');
+      if (!response.ok) {
+        throw new Error(data.error || 'Workflow execution failed');
       }
+
+      setExecutionResult(prev => ({
+        ...prev,
+        [wf.id]: {
+          sessionId: data.sessionId || 'N/A',
+          success: data.success !== false,
+          status: data.status || 'completed',
+          results: data.results || [],
+          errors: data.errors || [],
+          finalData: data.finalData || data.data,
+        },
+      }));
+
+      setWizardStep(3); // Results state
+      showToast(`Workflow "${wf.name}" executed successfully`, 'success', 'Graph Execution Done');
     } catch (err) {
-      console.error('Workflow execution error:', err);
-      showToast(`Workflow ${wizardWorkflow.name} failed to complete.`, 'error', 'Execution Error');
+      const errorMsg = err instanceof Error ? err.message : 'Execution error';
+      setExecutionResult(prev => ({
+        ...prev,
+        [wf.id]: {
+          sessionId: 'FAILED',
+          success: false,
+          status: 'failed',
+          results: [],
+          errors: [errorMsg],
+        },
+      }));
       setWizardStep(3);
+      showToast(`Workflow "${wf.name}" failed: ${errorMsg}`, 'error', 'Execution Error');
     } finally {
       setExecutingId(null);
     }
   };
 
-  if (loading) return <div className="text-white">Loading LangGraph Workflows...</div>;
-  if (error) return <div className="text-red-400">Error: {error}</div>;
-
   const deptColor = (dept: string) => DEPT_COLORS[dept] || 'slate';
 
   return (
     <>
-      <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700 p-6 rounded-xl shadow-xl space-y-6">
-        <div className="flex justify-between items-center">
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex justify-between items-center bg-slate-800/60 backdrop-blur-xl border border-slate-700/50 p-6 rounded-2xl shadow-xl">
           <div>
-            <h2 className="text-xl font-bold text-white">LangGraph Enterprise Workflow Center</h2>
-            <p className="text-sm text-slate-400">Multi-step autonomous agent state graphs and orchestrators</p>
+            <h2 className="text-xl font-bold text-white flex items-center gap-2">
+              <GitBranch className="w-6 h-6 text-construction-gold" />
+              <span>LangGraph Multi-Agent Workflows (6 Operational)</span>
+            </h2>
+            <p className="text-xs text-slate-400 mt-1">
+              Autonomous state graph orchestration engines for cross-department operations
+            </p>
           </div>
-          <span className="px-3 py-1 bg-amber-500/20 text-amber-400 border border-amber-500/30 rounded-full text-xs font-semibold">
-            {workflows.length} Active Workflows
-          </span>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {loading && <div className="text-slate-400 text-sm text-center py-8">Loading available workflows...</div>}
+        {error && <div className="text-red-400 text-sm text-center py-8">{error}</div>}
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {workflows.map(wf => {
             const isRunning = executingId === wf.id;
             const result = executionResult[wf.id];
             const color = deptColor(wf.department);
-            const icon = DEPT_ICONS[wf.department] || '⚙️';
+            const DeptIconComp = DEPT_ICONS[wf.department] || GitBranch;
 
             return (
               <motion.div
@@ -222,7 +182,10 @@ export default function Workflow({ token }: WorkflowProps) {
               >
                 <div>
                   <div className="flex justify-between items-start mb-2">
-                    <h3 className="text-lg font-semibold text-white">{icon} {wf.name}</h3>
+                    <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                      <DeptIconComp className="w-5 h-5 text-construction-gold" />
+                      <span>{wf.name}</span>
+                    </h3>
                     <span className={`px-2 py-0.5 rounded text-xs font-medium bg-${color}-500/20 text-${color}-300`}>
                       {wf.department}
                     </span>
@@ -242,7 +205,10 @@ export default function Workflow({ token }: WorkflowProps) {
                         <span>Executing Graph...</span>
                       </>
                     ) : (
-                      <span>🚀 Configure & Launch</span>
+                      <>
+                        <Rocket className="w-4 h-4" />
+                        <span>Configure & Launch</span>
+                      </>
                     )}
                   </button>
 
@@ -257,8 +223,9 @@ export default function Workflow({ token }: WorkflowProps) {
                         <div className="space-y-1">
                           <p className="text-slate-400 font-sans font-semibold">Executed Steps:</p>
                           {result.results.map((resItem, idx) => (
-                            <div key={idx} className="bg-slate-800/80 p-2 rounded text-slate-300">
-                              ✓ {resItem.node}
+                            <div key={idx} className="bg-slate-800/80 p-2 rounded text-slate-300 flex items-center gap-1.5">
+                              <Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                              <span>{resItem.node}</span>
                             </div>
                           ))}
                         </div>
@@ -292,68 +259,70 @@ export default function Workflow({ token }: WorkflowProps) {
               <div className="bg-slate-900/80 p-5 border-b border-slate-700">
                 <div className="flex justify-between items-center">
                   <div>
-                    <h3 className="text-lg font-bold text-white">{DEPT_ICONS[wizardWorkflow.department] || '⚙️'} {wizardWorkflow.name}</h3>
+                    <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                      {(() => {
+                        const IconComponent = DEPT_ICONS[wizardWorkflow.department] || GitBranch;
+                        return <IconComponent className="w-5 h-5 text-construction-gold" />;
+                      })()}
+                      <span>{wizardWorkflow.name}</span>
+                    </h3>
                     <p className="text-xs text-slate-400 mt-1">{wizardWorkflow.description}</p>
                   </div>
                   {wizardStep !== 2 && (
-                    <button onClick={closeWizard} className="text-slate-400 hover:text-white text-lg px-2">✕</button>
+                    <button onClick={closeWizard} className="text-slate-400 hover:text-white p-1">
+                      <X className="w-5 h-5" />
+                    </button>
                   )}
                 </div>
-                {/* Progress dots */}
+                {/* Stepper Indicator */}
                 <div className="flex items-center gap-2 mt-4">
-                  {['Configure', 'Confirm', 'Execute', 'Results'].map((label, i) => (
-                    <div key={i} className="flex items-center gap-2">
-                      <div className={`w-2.5 h-2.5 rounded-full transition-colors ${
-                        i < wizardStep ? 'bg-green-400' :
-                        i === wizardStep ? 'bg-construction-gold animate-pulse' :
-                        'bg-slate-600'
-                      }`} />
-                      <span className={`text-xs ${i === wizardStep ? 'text-white' : 'text-slate-500'}`}>{label}</span>
-                      {i < 3 && <div className={`w-4 h-px ${i < wizardStep ? 'bg-green-400' : 'bg-slate-600'}`} />}
+                  {['Parameters', 'Review', 'Execution', 'Results'].map((label, idx) => (
+                    <div key={label} className="flex-1 flex items-center gap-1.5">
+                      <div className={`w-5 h-5 rounded-full text-[10px] font-bold flex items-center justify-center ${
+                        wizardStep === idx ? 'bg-construction-gold text-black' :
+                        wizardStep > idx ? 'bg-green-500 text-white' : 'bg-slate-700 text-slate-400'
+                      }`}>
+                        {wizardStep > idx ? <Check className="w-3 h-3" /> : idx + 1}
+                      </div>
+                      <span className={`text-[11px] font-medium hidden sm:inline ${wizardStep === idx ? 'text-white font-bold' : 'text-slate-500'}`}>{label}</span>
+                      {idx < 3 && <div className="flex-1 h-0.5 bg-slate-700" />}
                     </div>
                   ))}
                 </div>
               </div>
 
               {/* Body */}
-              <div className="p-5 max-h-[60vh] overflow-y-auto">
-                {/* Step 0: Configure Parameters */}
+              <div className="p-6 max-h-[60vh] overflow-y-auto">
+                {/* Step 0: Parameters */}
                 {wizardStep === 0 && (
                   <div className="space-y-4">
-                    <h4 className="text-sm font-semibold text-slate-300 uppercase tracking-wide">Workflow Parameters</h4>
-                    {(WORKFLOW_PARAMS[wizardWorkflow.id]?.fields || []).map(field => (
-                      <div key={field.key}>
-                        <label className="block text-sm text-slate-300 mb-1">{field.label}</label>
-                        {field.type === 'textarea' ? (
-                          <textarea
-                            value={wizardParams[field.key] || ''}
-                            onChange={e => setWizardParams(p => ({ ...p, [field.key]: e.target.value }))}
-                            placeholder={field.placeholder}
-                            rows={3}
-                            className="w-full p-3 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-construction-gold focus:ring-1 focus:ring-construction-gold transition-colors text-sm resize-none"
-                          />
-                        ) : (
+                    <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider">Configure Parameters</p>
+                    {Object.keys(wizardParams).length === 0 ? (
+                      <p className="text-sm text-slate-400 italic">No customizable parameters required for this workflow.</p>
+                    ) : (
+                      Object.entries(wizardParams).map(([key, value]) => (
+                        <div key={key}>
+                          <label className="block text-xs font-mono text-slate-300 mb-1 capitalize">{key.replace(/([A-Z])/g, ' $1')}</label>
                           <input
-                            type={field.type}
-                            value={wizardParams[field.key] || ''}
-                            onChange={e => setWizardParams(p => ({ ...p, [field.key]: e.target.value }))}
-                            placeholder={field.placeholder}
-                            className="w-full p-3 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-construction-gold focus:ring-1 focus:ring-construction-gold transition-colors text-sm"
+                            type="text"
+                            value={value}
+                            onChange={(e) => setWizardParams(prev => ({ ...prev, [key]: e.target.value }))}
+                            className="w-full p-2.5 bg-slate-900 border border-slate-700 rounded-lg text-sm text-white focus:outline-none focus:border-construction-gold"
                           />
-                        )}
-                      </div>
-                    ))}
+                        </div>
+                      ))
+                    )}
                   </div>
                 )}
 
-                {/* Step 1: Confirm */}
+                {/* Step 1: Review & Confirm */}
                 {wizardStep === 1 && (
                   <div className="space-y-4">
-                    <h4 className="text-sm font-semibold text-slate-300 uppercase tracking-wide">Confirm Execution</h4>
+                    <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider">Review Configuration</p>
                     <div className="bg-slate-900/60 border border-slate-700 rounded-lg p-4 space-y-2">
                       <div className="flex justify-between text-sm">
                         <span className="text-slate-400">Workflow</span>
-                        <span className="text-white font-medium">{wizardWorkflow.name}</span>
+                        <span className="text-white font-bold">{wizardWorkflow.name}</span>
                       </div>
                       <div className="flex justify-between text-sm">
                         <span className="text-slate-400">Department</span>
@@ -375,8 +344,9 @@ export default function Workflow({ token }: WorkflowProps) {
                         ))}
                       </div>
                     </div>
-                    <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-3">
-                      <p className="text-amber-300 text-xs">⚠️ This will execute the workflow with the parameters above. The process runs autonomously through all graph nodes.</p>
+                    <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-3 flex items-start gap-2">
+                      <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+                      <p className="text-amber-300 text-xs">This will execute the workflow with the parameters above. The process runs autonomously through all graph nodes.</p>
                     </div>
                   </div>
                 )}
@@ -386,7 +356,9 @@ export default function Workflow({ token }: WorkflowProps) {
                   <div className="flex flex-col items-center justify-center py-8 space-y-4">
                     <div className="relative">
                       <div className="animate-spin rounded-full h-16 w-16 border-4 border-slate-600 border-t-construction-gold"></div>
-                      <div className="absolute inset-0 flex items-center justify-center text-2xl">⚡</div>
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <Zap className="w-6 h-6 text-construction-gold" />
+                      </div>
                     </div>
                     <h4 className="text-lg font-semibold text-white">Executing Workflow Graph</h4>
                     <p className="text-sm text-slate-400 text-center">Processing {wizardWorkflow.name}...<br />Traversing state graph nodes autonomously.</p>
@@ -408,7 +380,11 @@ export default function Workflow({ token }: WorkflowProps) {
                           ? 'bg-green-500/10 border-green-500/30'
                           : 'bg-red-500/10 border-red-500/30'
                       }`}>
-                        <span className="text-3xl">{result?.success ? '✅' : '❌'}</span>
+                        {result?.success ? (
+                          <CheckCircle2 className="w-8 h-8 text-green-400 shrink-0" />
+                        ) : (
+                          <XCircle className="w-8 h-8 text-red-400 shrink-0" />
+                        )}
                         <div>
                           <h4 className={`font-semibold ${result?.success ? 'text-green-300' : 'text-red-300'}`}>
                             {result?.success ? 'Workflow Completed Successfully' : 'Workflow Failed'}
@@ -466,8 +442,9 @@ export default function Workflow({ token }: WorkflowProps) {
                 {wizardStep === 1 && (
                   <>
                     <button onClick={() => setWizardStep(0)} className="px-4 py-2 text-slate-400 hover:text-white transition-colors text-sm">← Back</button>
-                    <button onClick={executeWorkflow} className="px-6 py-2 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-500 transition-colors text-sm">
-                      🚀 Execute Workflow
+                    <button onClick={executeWorkflow} className="px-6 py-2 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-500 transition-colors text-sm flex items-center gap-1.5">
+                      <Rocket className="w-4 h-4" />
+                      <span>Execute Workflow</span>
                     </button>
                   </>
                 )}
@@ -477,8 +454,9 @@ export default function Workflow({ token }: WorkflowProps) {
                 {wizardStep === 3 && (
                   <>
                     <button onClick={closeWizard} className="px-4 py-2 text-slate-400 hover:text-white transition-colors text-sm">Close</button>
-                    <button onClick={() => { setWizardStep(0); }} className="px-6 py-2 bg-construction-gold text-black font-semibold rounded-lg hover:bg-yellow-500 transition-colors text-sm">
-                      🔄 Run Again
+                    <button onClick={() => { setWizardStep(0); }} className="px-6 py-2 bg-construction-gold text-black font-semibold rounded-lg hover:bg-yellow-500 transition-colors text-sm flex items-center gap-1.5">
+                      <RotateCw className="w-4 h-4" />
+                      <span>Run Again</span>
                     </button>
                   </>
                 )}

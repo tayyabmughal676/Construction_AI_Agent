@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useToast } from './Toast';
+import { Building2, Plus, Eye, Edit, Trash2, X, Search, MapPin } from 'lucide-react';
 
 interface Project {
   id: string;
@@ -153,25 +154,30 @@ export default function Construction({ token }: ConstructionProps) {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-800/60 backdrop-blur-xl border border-slate-700/50 p-6 rounded-2xl shadow-xl">
         <div>
           <h2 className="text-xl font-bold text-white flex items-center gap-2">
-            <span>🏗️</span> Site Terminal — Active Projects
+            <Building2 className="w-6 h-6 text-amber-400" />
+            <span>Site Terminal — Active Projects</span>
           </h2>
           <p className="text-xs text-slate-400 mt-1">
             Track site construction progress, material budgets, safety phases, and project timelines
           </p>
         </div>
         <div className="flex items-center gap-3 w-full sm:w-auto">
-          <input
-            type="text"
-            placeholder="Search by project ID, name..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="p-2.5 bg-slate-900/80 border border-slate-700 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 w-full sm:w-64"
-          />
+          <div className="relative w-full sm:w-64">
+            <Search className="w-3.5 h-3.5 text-slate-500 absolute left-3 top-3" />
+            <input
+              type="text"
+              placeholder="Search by project ID, name..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="p-2.5 pl-8 bg-slate-900/80 border border-slate-700 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 w-full"
+            />
+          </div>
           <button
             onClick={() => setAddModalOpen(true)}
             className="px-4 py-2.5 bg-amber-500 hover:bg-amber-400 text-black font-semibold text-xs rounded-xl shadow-lg shadow-amber-500/20 transition-all flex items-center gap-1.5 whitespace-nowrap"
           >
-            <span>+</span> Add Project
+            <Plus className="w-4 h-4" />
+            <span>Add Project</span>
           </button>
         </div>
       </div>
@@ -218,9 +224,11 @@ export default function Construction({ token }: ConstructionProps) {
                 </div>
 
                 <div className="text-xs text-slate-300 space-y-1.5 my-3 bg-slate-900/40 p-3 rounded-xl border border-slate-800">
-                  <p className="flex justify-between">
-                    <span className="text-slate-500">Location:</span>
-                    <span className="font-medium text-white">📍 {project.location}</span>
+                  <p className="flex justify-between items-center">
+                    <span className="text-slate-500 flex items-center gap-1">
+                      <MapPin className="w-3 h-3 text-slate-400" /> Location:
+                    </span>
+                    <span className="font-medium text-white">{project.location}</span>
                   </p>
                   <p className="flex justify-between">
                     <span className="text-slate-500">Budget:</span>
@@ -244,24 +252,26 @@ export default function Construction({ token }: ConstructionProps) {
                 <div className="flex justify-end gap-2 mt-4 pt-3 border-t border-slate-700/50">
                   <button
                     onClick={() => setDetailModal(project)}
-                    className="p-1.5 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg text-xs transition-all"
+                    className="p-1.5 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg text-xs transition-all inline-flex items-center gap-1"
                     title="View Site Details"
                   >
-                    👁️ Details
+                    <Eye className="w-3.5 h-3.5" />
+                    <span>Details</span>
                   </button>
                   <button
                     onClick={() => setEditModal(project)}
-                    className="p-1.5 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 rounded-lg text-xs border border-amber-500/30 transition-all"
+                    className="p-1.5 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 rounded-lg text-xs border border-amber-500/30 transition-all inline-flex items-center gap-1"
                     title="Edit Project"
                   >
-                    ✏️ Edit
+                    <Edit className="w-3.5 h-3.5" />
+                    <span>Edit</span>
                   </button>
                   <button
                     onClick={() => handleDelete(project.id, project.name)}
-                    className="p-1.5 bg-rose-600/20 hover:bg-rose-600/40 text-rose-300 rounded-lg text-xs border border-rose-500/30 transition-all"
+                    className="p-1.5 bg-rose-600/20 hover:bg-rose-600/40 text-rose-300 rounded-lg text-xs border border-rose-500/30 transition-all inline-flex items-center"
                     title="Delete Project"
                   >
-                    🗑️
+                    <Trash2 className="w-3.5 h-3.5" />
                   </button>
                 </div>
               </div>

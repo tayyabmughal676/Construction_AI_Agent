@@ -35,7 +35,7 @@ This open-source project is proudly sponsored, engineered, and maintained by **[
 
 The **Construction AI Agent System** is a production-ready, open-source multi-agent platform designed to bridge information silos and automate operations across **Construction**, **Manufacturing**, and **HR** departments. 
 
-Using an **Intelligent NLP Router (Groq LLM + LM Studio Fallback)** alongside **LangGraph StateGraph Workflows**, the system decomposes complex user queries (*"Onboard Sarah as an engineer, order 500 steel beams, and estimate site timeline"*) into parallel or sequential execution tasks across specialized AI agents.
+Powered by a **Dynamic Intelligence Intent Layer (`IntelligentIntentLayer.ts`)** harvesting live tool schemas, **LangGraph StateGraph Workflows (v2.x)**, and the **Issa Group Enterprise Knowledge Base & Policy Engine**, the system dynamically classifies user queries (*"What is our WFH policy, onboard Sarah as an engineer, order 500 steel beams, and estimate site timeline"*) into parallel or sequential execution tasks across specialized AI agents.
 
 ---
 
@@ -263,6 +263,7 @@ curl -X POST http://localhost:3000/api/workflows/langgraph/company-control \
 ├── AGENTS.md                 # Agent architecture & tool specifications
 ├── CHANGELOG.md              # Project version release history
 ├── v2-work.md                # 2-Phase V2 Swarm Engine roadmap
+├── n8n-workflow-plan.md      # Enterprise n8n & Profit Automation Plan
 └── README.md                 # Project documentation
 ```
 

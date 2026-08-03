@@ -27,6 +27,9 @@ export async function seedDatabase() {
         // Seed Construction data
         await seedConstructionData(db);
 
+        // Seed Knowledge Base data for Issa Enterprise
+        await seedKnowledgeData(db);
+
         logger.info('✅ Database seeding completed successfully with rich enterprise data!');
     } catch (error) {
         logger.error({ error }, 'Failed to seed database');
@@ -41,7 +44,7 @@ async function clearCollections(db: any) {
         'users', 'employees', 'leave_requests', 'leave_balances', 'performance_goals',
         'performance_reviews', 'performance_feedback', 'inventory', 'stock_movements',
         'production_runs', 'quality_inspections', 'quality_defects', 'equipment',
-        'maintenance_records', 'projects'
+        'maintenance_records', 'projects', 'knowledge'
     ];
 
     for (const collection of collections) {
@@ -228,6 +231,27 @@ async function seedHRData(db: any) {
 
     await db.collection('employees').insertMany(employees);
     logger.info(`✅ Inserted ${employees.length} employees`);
+
+    // Seed Performance Data for EMP001, EMP002, EMP003
+    const goals = [
+        { employeeId: 'EMP001', title: 'Complete AI Orchestration Engine', status: 'completed', category: 'individual', priority: 'high', createdAt: new Date() },
+        { employeeId: 'EMP001', title: 'Achieve 98% Test Code Coverage', status: 'completed', category: 'individual', priority: 'high', createdAt: new Date() },
+        { employeeId: 'EMP001', title: 'Deploy LangGraph Swarm Workflows', status: 'completed', category: 'team', priority: 'critical', createdAt: new Date() },
+        { employeeId: 'EMP002', title: 'Launch Q3 Brand Awareness Campaign', status: 'completed', category: 'individual', priority: 'medium', createdAt: new Date() },
+    ];
+    await db.collection('performance_goals').insertMany(goals);
+
+    const reviews = [
+        { employeeId: 'EMP001', reviewerId: 'EMP004', reviewType: 'quarterly', rating: 5, comments: 'Exceptional architectural delivery of multi-agent swarm system', reviewDate: '2026-07-01' },
+        { employeeId: 'EMP001', reviewerId: 'EMP004', reviewType: 'annual', rating: 4.6, comments: 'Consistently exceeds expectations across all technical initiatives', reviewDate: '2026-01-15' },
+    ];
+    await db.collection('performance_reviews').insertMany(reviews);
+
+    const feedback = [
+        { employeeId: 'EMP001', fromEmployeeId: 'EMP003', feedbackType: 'positive', message: 'Outstanding support on construction tool integration.', anonymous: false },
+    ];
+    await db.collection('performance_feedback').insertMany(feedback);
+    logger.info('✅ Inserted HR performance goals, reviews, and feedback');
 
     // Leave balances
     const leaveBalances = employees.map(emp => ({
@@ -468,6 +492,137 @@ async function seedConstructionData(db: any) {
 
     await db.collection('projects').insertMany(projects);
     logger.info(`✅ Inserted ${projects.length} construction projects`);
+}
+
+// ==================== KNOWLEDGE BASE DATA (ISSA ENTERPRISE) ====================
+async function seedKnowledgeData(db: any) {
+    logger.info('Seeding Issa Group Enterprise Knowledge Base & Policies...');
+
+    const knowledgeArticles = [
+        {
+            title: 'Issa Group Hybrid & Work From Home (WFH) Policy',
+            category: 'hr_policies',
+            department: 'HR',
+            content: 'Issa Group eligible full-time employees may work remotely up to two days per week subject to manager approval. Remote work requires a dedicated, quiet workspace and stable internet connectivity. The company provides a one-time stipend of $500 for home office ergonomics and hardware setup.',
+            tags: ['wfh', 'remote', 'policy', 'stipend', 'benefits'],
+            updatedAt: new Date(),
+        },
+        {
+            title: 'Issa Group Paid Leave & Vacation Policy',
+            category: 'hr_policies',
+            department: 'HR',
+            content: 'Full-time Issa Group employees receive 20 paid vacation days per calendar year accrued monthly. Up to 10 paid sick days are granted annually (doctor note required for absences over 2 consecutive days). Parental leave provides 12 weeks of 100% paid leave for primary caregivers.',
+            tags: ['leave', 'vacation', 'pto', 'sick', 'parental'],
+            updatedAt: new Date(),
+        },
+        {
+            title: 'Issa Group Compensation & Salary Grade Levels',
+            category: 'hr_policies',
+            department: 'HR',
+            content: 'Issa Group salary grades range from Grade L2 (Field Technician: $55k-$70k), Grade L4-L5 (Senior Site Engineer: $95k-$130k), Grade L6-L7 (Project Director: $145k-$185k), to Grade L8 (Corporate Vice President: $210k+). Salaries are reviewed annually in Q4.',
+            tags: ['salary', 'grades', 'pay', 'compensation'],
+            updatedAt: new Date(),
+        },
+        {
+            title: 'Issa Group Health Insurance & Retirement Match',
+            category: 'hr_policies',
+            department: 'HR',
+            content: 'Issa Group provides comprehensive health, dental, and vision insurance with 90% employer premium coverage. 401(k) retirement contributions are matched 100% up to 5% of annual base salary with immediate vesting upon hire.',
+            tags: ['insurance', '401k', 'health', 'retirement', 'benefits'],
+            updatedAt: new Date(),
+        },
+        {
+            title: 'Issa Group Code of Conduct & Workplace Ethics',
+            category: 'hr_policies',
+            department: 'HR',
+            content: 'Issa Group maintains a zero-tolerance policy against discrimination, harassment, safety compromise, or conflict of interest. All employees must adhere to ethical business practices, client confidentiality, and environmental sustainability standards.',
+            tags: ['ethics', 'conduct', 'policy', 'compliance'],
+            updatedAt: new Date(),
+        },
+        {
+            title: 'Issa OSHA Pre-Construction Inspection Checklist SOP',
+            category: 'construction_sops',
+            department: 'CONSTRUCTION',
+            content: 'Before launching any excavation or structural framing at an Issa Construction site, the Project Superintendent must execute the 15-Point OSHA Safety Checklist covering utility mark-outs, trench soil stability, perimeter guardrails, and emergency assembly point signaling.',
+            tags: ['osha', 'checklist', 'safety', 'construction', 'inspection'],
+            updatedAt: new Date(),
+        },
+        {
+            title: 'Issa Site Personal Protective Equipment (PPE) Standard',
+            category: 'construction_sops',
+            department: 'CONSTRUCTION',
+            content: 'All active Issa Construction sites require 100% PPE compliance: ANSI Z89.1 Hard Hats, High-Visibility Class 2 Vests, ASTM F2413 Steel-Toe Safety Boots (Grade 75 impact protection), and UV-shielded Safety Eyewear. Failure to wear PPE results in immediate site removal.',
+            tags: ['ppe', 'boots', 'hard-hat', 'safety', 'construction'],
+            updatedAt: new Date(),
+        },
+        {
+            title: 'Issa Fall Protection & Scaffolding Anchor Standard',
+            category: 'construction_sops',
+            department: 'CONSTRUCTION',
+            content: 'Full-body harnesses connected to certified 5,000 lbs capacity anchor points are mandatory for all work performed at heights exceeding 6 feet (1.8m). Scaffolding must be inspected daily by a certified competent person before crew mounting.',
+            tags: ['fall-protection', 'scaffolding', 'heights', 'harness', 'safety'],
+            updatedAt: new Date(),
+        },
+        {
+            title: 'Issa Heavy Equipment Operator Licensing Standard',
+            category: 'construction_sops',
+            department: 'CONSTRUCTION',
+            content: 'Operation of heavy site equipment including tower cranes, hydraulic excavators, and high-capacity bulldozers is strictly restricted to operators holding active Issa Type C-2 Heavy Machine Certification.',
+            tags: ['heavy-equipment', 'crane', 'excavator', 'license', 'construction'],
+            updatedAt: new Date(),
+        },
+        {
+            title: 'Issa ISO 9001 Structural Steel Quality Control SOP',
+            category: 'manufacturing_sops',
+            department: 'MANUFACTURING',
+            content: 'Fabrication of structural steel beams (STEEL-001) must adhere to ISO 9001 quality standards. Batch inspections require a minimum 98.5% pass rate on ultrasonic weld testing and tensile yield strength verification before factory dispatch.',
+            tags: ['iso9001', 'quality', 'steel', 'manufacturing', 'qc'],
+            updatedAt: new Date(),
+        },
+        {
+            title: 'Issa Plant Equipment Preventive Maintenance 120-Hour SOP',
+            category: 'manufacturing_sops',
+            department: 'MANUFACTURING',
+            content: 'Automated CNC Plasma Cutters, Laser Welders, and Robotic Assembly Arms must undergo comprehensive preventive maintenance every 120 operational hours. Maintenance logs must record bearing lubrication, optical alignment, and hydraulic pressure metrics.',
+            tags: ['maintenance', 'cnc', 'robotics', 'equipment', 'manufacturing'],
+            updatedAt: new Date(),
+        },
+        {
+            title: 'Issa Recyclable Metal Scrap & Environmental SOP',
+            category: 'manufacturing_sops',
+            department: 'MANUFACTURING',
+            content: 'All off-cut steel, aluminum shavings, and scrap copper generated in fabrication nodes must be segregated into color-coded bins and processed weekly through certified industrial metal recyclers, targeting 95% metal recovery.',
+            tags: ['recycling', 'scrap', 'metal', 'environment', 'sustainability'],
+            updatedAt: new Date(),
+        },
+        {
+            title: 'Issa Procurement & Purchase Order (PO) Approval Thresholds',
+            category: 'corporate_schedules',
+            department: 'ENTERPRISE',
+            content: 'Purchase orders up to $10,000 may be approved automatically by Department Managers via AI agents. POs exceeding $10,000 require human-in-the-loop executive review and multi-agent graph interrupt authorization before vendor commitment.',
+            tags: ['procurement', 'po', 'approval', 'thresholds', 'budget'],
+            updatedAt: new Date(),
+        },
+        {
+            title: 'Issa Emergency Site Evacuation & Hazard Incident Protocol',
+            category: 'construction_sops',
+            department: 'CONSTRUCTION',
+            content: 'In the event of severe weather, structural shift, or gas leak, sound the 3-long air horn blasts. All crews immediately evacuate to Primary Assembly Point A. Site Superintendent notifies Safety Officer and dispatches emergency report within 15 minutes.',
+            tags: ['emergency', 'evacuation', 'incident', 'hazard', 'safety'],
+            updatedAt: new Date(),
+        },
+        {
+            title: 'Issa Onboarding 15-Step Employee Launch Standard',
+            category: 'hr_policies',
+            department: 'HR',
+            content: 'Newly hired Issa Group staff undergo automated 15-step onboarding: ID assignment (EMP001), IT equipment provisioning, safety orientation, badging, benefits enrollment, and mentor pairing within the first 48 hours.',
+            tags: ['onboarding', 'new-hire', 'launch', 'hr', 'checklist'],
+            updatedAt: new Date(),
+        }
+    ];
+
+    await db.collection('knowledge').insertMany(knowledgeArticles);
+    logger.info(`✅ Inserted ${knowledgeArticles.length} Issa Group Knowledge Base & Policy documents`);
 }
 
 // Run seeding if called directly

@@ -7,6 +7,7 @@ import { SafetyChecklistTool } from '../tools/construction/SafetyChecklistTool';
 import { CSVGeneratorTool } from '../tools/utils/CSVGeneratorTool';
 import { ExcelGeneratorTool } from '../tools/utils/ExcelGeneratorTool';
 import { PDFGeneratorTool } from '../tools/utils/PDFGeneratorTool';
+import { KnowledgeBaseTool } from '../tools/utils/KnowledgeBaseTool';
 import { logger } from '../config/logger';
 
 // Type definitions for our intent-based routing
@@ -42,6 +43,7 @@ export class ConstructionAgent extends BaseAgent {
         this.registerTool(new CSVGeneratorTool());
         this.registerTool(new ExcelGeneratorTool());
         this.registerTool(new PDFGeneratorTool());
+        this.registerTool(new KnowledgeBaseTool());
     }
 
     /**
@@ -123,6 +125,32 @@ export class ConstructionAgent extends BaseAgent {
         const lowerMessage = message.toLowerCase();
 
         try {
+            // Direct Tool Execution via Intelligent Intent Layer
+            if (context?.toolName && this.getTools().some(t => t.name === context.toolName)) {
+                logger.info({ toolName: context.toolName, action: context.action }, 'Construction Agent executing tool via Intelligent Intent Layer');
+                const res = await this.executeTool(context.toolName, context);
+                let formattedMessage = '';
+                if (res.success) {
+                    if (typeof res.data === 'string') {
+                        formattedMessage = res.data;
+                    } else if (res.data?.message) {
+                        formattedMessage = `✅ ${res.data.message}`;
+                    } else {
+                        formattedMessage = `✅ Executed ${context.toolName} successfully:\n` + JSON.stringify(res.data, null, 2);
+                    }
+                } else {
+                    formattedMessage = `❌ ${res.error}`;
+                }
+
+                return {
+                    sessionId,
+                    department: 'construction',
+                    message: formattedMessage,
+                    toolsUsed: [context.toolName],
+                    data: res.data,
+                } as AgentResponse;
+            }
+
             // 1. Try to match by LLM action first
             let intent = detection?.action ? this.intents.find(i => i.action === detection.action) : null;
 
@@ -178,8 +206,34 @@ export class ConstructionAgent extends BaseAgent {
         const result = await this.executeTool('project_tracker', {
             action: 'list'
         });
+
+        if (!result.success) {
+            return {
+                message: `❌ Error fetching projects: ${result.error}`,
+                toolsUsed: ['project_tracker'],
+            };
+        }
+
+        const projects = result.data.projects || [];
+        if (projects.length === 0) {
+            return {
+                message: '📋 No active construction projects found.',
+                toolsUsed: ['project_tracker'],
+                data: result.data,
+            };
+        }
+
+        const projectListText = projects.map((p: any) => 
+            `🏗️ **${p.name || p.projectId}** [${p.status?.toUpperCase() || 'ACTIVE'}]\n` +
+            `   • Progress: ${p.progress || 0}%\n` +
+            `   • Budget: $${(p.budget || 0).toLocaleString()}\n` +
+            `   • Location: ${p.location || 'N/A'}\n` +
+            `   • Client: ${p.client || 'Internal'}\n` +
+            `   • Description: ${p.description || 'No description provided'}`
+        ).join('\n\n');
+
         return {
-            message: result.success ? `📋 Found ${result.data.count} project(s).` : `❌ Error: ${result.error} `,
+            message: `📋 **Construction Projects (${projects.length} Total)**:\n\n${projectListText}`,
             toolsUsed: ['project_tracker'],
             data: result.data,
         };

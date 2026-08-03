@@ -4,6 +4,30 @@ All notable changes to the Multi-Agent Enterprise Orchestrator will be documente
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to Semantic Versioning.
 
+## [2.1.0] - 2026-08-03
+
+### Added
+- **🧠 Dynamic Intelligence Intent Layer (`IntelligentIntentLayer.ts`):** Harvests live tool schemas dynamically from `AgentRegistry` and performs zero-shot LLM intent classification and parameter extraction, eliminating hardcoded keyword lists.
+- **⚡ Direct Tool Dispatch Engine:** Implemented direct tool execution in `processMessage()` across `ConstructionAgent`, `HRAgent`, and `ManufacturingAgent` when invoked via the Intent Layer.
+- **🔄 Action Normalization & Parameter Enrichers:** Automatically maps LLM action synonyms (`list` → `list_items`, `order`/`create` → `add_item`, `find` → `check_stock`, `log` → `log_inspection`), populating parameter defaults.
+- **📖 Issa Enterprise Knowledge Base & Policy Engine:** Created MongoDB Knowledge model (`Knowledge.ts`) and seeded 15 detailed corporate policy documents for **Issa Construction & Industrial Group** ($500 WFH stipend, 20 PTO days, OSHA site safety checklists, ISO 9001 quality SOPs).
+- **🔍 Knowledge Base Search Tool (`KnowledgeBaseTool.ts`):** Built `company_knowledge_base` tool registered across `HRAgent`, `ConstructionAgent`, and `ManufacturingAgent`.
+- **📈 HR Performance Goals & Peer Feedback Seeding (`src/seed.ts`):** Seeded goals, reviews, and feedback records for employees `EMP001`, `EMP002`, and `EMP003`.
+- **🛡️ Defensive Tool Exception Guard (`BaseAgent.ts`):** Wrapped tool execution in try/catch to eliminate unhandled server process crashes.
+- **🍃 MongoDB Text Indexing Expansion (`mongodb.ts`):** Added `KnowledgeTextIndex` for sub-5ms text queries across policy documents.
+- **🕒 Safe Frontend Date Formatting (`App.tsx`):** Added `formatTimestamp()` helper resolving ISO date string deserialization errors cleanly.
+
+## [2.0.0-phase2] - 2026-08-03
+
+### Added
+- **🌐 LangGraph Autonomous Swarm Engine (`MultiAgentSwarmGraph.ts`):** Built top-level StateGraph featuring Supervisor task decomposition, parallel multi-agent execution (Construction, HR, Manufacturing nodes running in parallel), and barrier join synthesis.
+- **💾 MongoDB Checkpointer Persistence (`MongoDBSaver.ts`):** Added state checkpointer storing graph execution checkpoints in collection `langgraph_checkpoints` with memory fallback.
+- **🛑 Human-in-the-Loop Interrupt Nodes:** Added conditional interrupt node that automatically pauses graph execution whenever purchase order totals exceed **$10,000**, saving state in MongoDB.
+- **🌐 Isolated v2 Route Group (`/api/v2/graph/*`):** Created `src/routes/v2graph.ts` featuring `/chat`, `/approve`, `/checkpoint/:sessionId`, and `/pending-approvals` endpoints.
+- **🔘 Header Engine Switcher (`App.tsx`):** Added a sleek toggle in the header bar allowing seamless switching between **⚡ Standard v1.x Direct REST Engine** and **🌐 v2.x LangGraph Swarm Graph**.
+- **✋ Interactive Human Approval Modal:** Rendered an interactive **Approve / Reject** dialog when a V2 graph triggers a high-value purchase order interrupt.
+- **🧪 Swarm Test Suite (`MultiAgentSwarm.test.ts`):** Added 4 automated unit & integration tests covering Swarm StateGraph compilation, MongoDB checkpoints, multi-agent execution, and $10k+ purchase order interrupts (29/29 total tests passing).
+
 ## [2.0.0-phase1] - 2026-08-01
 
 ### Added

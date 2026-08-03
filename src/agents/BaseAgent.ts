@@ -44,25 +44,26 @@ export abstract class BaseAgent {
     async executeTool(toolName: string, params: any): Promise<ToolResult> {
         const tool = this.tools.get(toolName);
         if (!tool) {
-            logger.error(`Tool "${toolName}" not found for agent "${this.name}".`);
+            logger.error({ agent: this.name, toolName }, `Tool "${toolName}" not found for agent "${this.name}".`);
             return {
                 success: false,
                 error: `Tool "${toolName}" is not available.`
             };
         }
 
-        logger.info({
-            agent: this.name,
-            toolName,
-            params
-        }, 'Executing tool');
-        const result = await tool.execute(params);
-        logger.info({
-            toolName,
-            result
-        }, 'Tool execution completed');
-
-        return result;
+        try {
+            logger.info({ agent: this.name, toolName, params }, 'Executing tool');
+            const result = await tool.execute(params);
+            logger.info({ agent: this.name, toolName, success: result.success }, 'Tool execution completed');
+            return result;
+        } catch (error) {
+            const errorMsg = error instanceof Error ? error.message : 'Unknown tool execution failure';
+            logger.error({ agent: this.name, toolName, error: errorMsg }, 'Tool execution threw an uncaught exception');
+            return {
+                success: false,
+                error: `Error executing tool "${toolName}": ${errorMsg}`,
+            };
+        }
     }
 
     /**
