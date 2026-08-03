@@ -27,6 +27,8 @@ import agentRouter from './routes/agents';
 import workflowRouter from './routes/workflows';
 import hrRouter from './routes/hr';
 import manufacturingRouter from './routes/manufacturing';
+import authRouter from './routes/auth';
+import filesRouter from './routes/files';
 import { v2graphRouter } from './routes/v2graph';
 
 // --- Auth Middleware (Handled Inline) ---
@@ -133,120 +135,13 @@ app.group('/api', (api) => api
             return { error: 'Invalid or expired token' };
         }
     })
-    .post('/auth/register', async (c) => {
-        console.log('Register request received')
-        try {
-            console.log('Parsing body')
-            const body = (c.body as any) || await c.request.clone().json();
-            console.log('Body parsed:', body)
-            const userData = UserSchema.parse(body);
-            console.log('User data validated:', userData)
-
-            // Check if user already exists
-            const existingUser = await mongodb.getDb().collection('users').findOne({ email: userData.email });
-            if (existingUser) {
-                console.log('User already exists')
-                c.set.status = 409;
-                return { error: 'User already exists' };
-            }
-
-            // Hash password
-            console.log('Hashing password')
-            const hashedPassword = await bcrypt.hash(userData.password, 10);
-
-            const user = {
-                name: userData.name,
-                email: userData.email,
-                password: hashedPassword,
-                role: userData.role,
-                createdAt: new Date(),
-                updatedAt: new Date(),
-            };
-
-            console.log('Inserting user')
-            const result = await mongodb.getDb().collection('users').insertOne(user);
-            console.log('User inserted:', result.insertedId)
-            c.set.status = 201;
-            return { message: 'User registered successfully', userId: result.insertedId };
-        } catch (error) {
-            console.error('Register error:', error)
-            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-            c.set.status = 400;
-            return { error: 'Registration failed', details: errorMessage };
-        }
-    })
-    .post('/auth/login', async (c) => {
-        console.log('Login request received')
-        try {
-            const body = ((c.body as any) || await c.request.clone().json()) as { email?: string; password?: string };
-            const { email, password } = body;
-            console.log('Login attempt for:', email)
-
-            if (!email || !password) {
-                console.log('Missing email or password')
-                c.set.status = 400;
-                return { error: 'Email and password required' };
-            }
-
-            const user = await mongodb.getDb().collection('users').findOne({ email });
-            if (!user) {
-                console.log('User not found')
-                c.set.status = 401;
-                return { error: 'Invalid credentials' };
-            }
-
-            const isValidPassword = await bcrypt.compare(password, user.password);
-            if (!isValidPassword) {
-                console.log('Invalid password')
-                c.set.status = 401;
-                return { error: 'Invalid credentials' };
-            }
-
-            console.log('Login successful, generating token')
-            const token = jwt.sign(
-                { id: user._id.toString(), email: user.email, role: user.role },
-                env.JWT_SECRET,
-                { expiresIn: env.JWT_EXPIRES_IN || '7d' } as SignOptions
-            );
-
-            return {
-                token,
-                user: { id: user._id, email: user.email, role: user.role }
-            };
-        } catch (error) {
-            console.error('Login error:', error)
-            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-            c.set.status = 400;
-            return { error: 'Login failed', details: errorMessage };
-        }
-    })
+    .group('/auth', (group) => group.use(authRouter))
     .group('/agents', (group) => group.use(requireRole(['admin', 'user'])).use(agentRouter))
     .group('/workflows', (group) => group.use(requireRole(['admin'])).use(workflowRouter))
     .group('/hr', (group) => group.use(requireRole(['admin', 'user'])).use(hrRouter))
     .group('/construction', (group) => group.use(requireRole(['admin', 'user'])).use(constructionRouter))
     .group('/manufacturing', (group) => group.use(requireRole(['admin', 'user'])).use(manufacturingRouter))
-    .get('/files/:type/:filename', async (c) => {
-        const { type, filename } = c.params;
-        const safeType = type.replace(/[^a-zA-Z0-9_-]/g, '');
-        const safeFilename = filename.replace(/[^a-zA-Z0-9_.-]/g, '');
-        const filePath = path.join(process.cwd(), 'generated', safeType, safeFilename);
-
-        if (!fs.existsSync(filePath)) {
-            c.set.status = 404;
-            return { error: 'File not found' };
-        }
-
-        const file = Bun.file(filePath);
-        return new Response(file, {
-            headers: {
-                'Content-Type': safeFilename.endsWith('.pdf') ? 'application/pdf' :
-                                safeFilename.endsWith('.csv') ? 'text/csv' :
-                                safeFilename.endsWith('.xlsx') ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' :
-                                'application/octet-stream',
-                'Content-Disposition': `attachment; filename="${safeFilename}"`,
-            }
-        });
-    })
+    .use(filesRouter)
     .get('/', (c) => {
         return {
             message: 'Multi-Agent Construction & Industrial API',

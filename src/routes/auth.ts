@@ -9,7 +9,7 @@ const authRouter = new Elysia();
 
 authRouter.post('/register', async (c) => {
   try {
-    const body = await c.request.json();
+    const body = (c.body as any) || (await c.request.clone().json());
     const userData = UserSchema.parse(body);
 
     // Check if user already exists
@@ -43,7 +43,8 @@ authRouter.post('/register', async (c) => {
 
 authRouter.post('/login', async (c) => {
   try {
-    const { email, password } = await c.request.json() as { email: string; password: string };
+    const body = ((c.body as any) || (await c.request.clone().json())) as { email?: string; password?: string };
+    const { email, password } = body || {};
 
     if (!email || !password) {
       c.set.status = 400;
@@ -70,7 +71,7 @@ authRouter.post('/login', async (c) => {
 
     return {
       token,
-      user: { id: user._id, email: user.email, role: user.role }
+      user: { id: user._id, email: user.email, role: user.role },
     };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';

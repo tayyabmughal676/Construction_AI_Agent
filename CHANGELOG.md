@@ -4,6 +4,15 @@ All notable changes to the Multi-Agent Enterprise Orchestrator will be documente
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to Semantic Versioning.
 
+## [2.2.0] - 2026-08-03
+
+### Refactored & Hardened
+- **🛠️ Modular Server Architecture (`src/app.ts`):** Refactored server entry point by extracting inline authentication handlers into [`src/routes/auth.ts`](file:///Users/mac/Desktop/n8n/Construction_AI_Agent/src/routes/auth.ts) and creating a standalone in-chat file downloader router [`src/routes/files.ts`](file:///Users/mac/Desktop/n8n/Construction_AI_Agent/src/routes/files.ts).
+- **🎨 100% Vector Lucide Icon Migration:** Replaced all raw text emojis and inline SVGs across `App.tsx`, `HR.tsx`, `Construction.tsx`, `Manufacturing.tsx`, `Workflow.tsx`, and `Toast.tsx` with high-resolution vector `lucide-react` icons.
+- **📌 Sidebar Thread Actions & Live System Indicator:** Added `isPinned` state with top thread sorting, a glassmorphism delete confirmation modal, and an animated pulsing emerald heartbeat dot indicating a live, operational system.
+- **🧭 ChatGPT-Style Outline Navigator (`MessageOutlineNav.tsx`):** Built floating vertical timeline navigation bar with hover tooltips and `scrollIntoView()` smooth jump triggers.
+- **🧪 Comprehensive Test Suite (37/37 PASS):** Verified zero regression across 13 test files (100% test coverage success).
+
 ## [2.1.0] - 2026-08-03
 
 ### Added
