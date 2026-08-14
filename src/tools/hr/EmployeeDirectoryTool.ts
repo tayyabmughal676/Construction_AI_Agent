@@ -187,18 +187,22 @@ export class EmployeeDirectoryTool implements BaseTool {
                         return {success: false, error: 'search query is required'};
                     }
 
+                    // SEC-07: Escape special regex characters to prevent ReDoS and invalid pattern crashes
+                    const escapeRegex = (str: string) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                    const safeQuery = escapeRegex(String(query).trim().substring(0, 100)); // Limit search query length
+
                     // Use custom search queries if provided (for multi-word split search),
                     // otherwise fall back to standard single-string search
                     const searchFilter = customQueries
                         ? { $or: customQueries }
                         : {
                             $or: [
-                                {firstName: {$regex: query, $options: 'i'}},
-                                {lastName: {$regex: query, $options: 'i'}},
-                                {email: {$regex: query, $options: 'i'}},
-                                {employeeId: {$regex: query, $options: 'i'}},
-                                {department: {$regex: query, $options: 'i'}},
-                                {position: {$regex: query, $options: 'i'}},
+                                {firstName: {$regex: safeQuery, $options: 'i'}},
+                                {lastName: {$regex: safeQuery, $options: 'i'}},
+                                {email: {$regex: safeQuery, $options: 'i'}},
+                                {employeeId: {$regex: safeQuery, $options: 'i'}},
+                                {department: {$regex: safeQuery, $options: 'i'}},
+                                {position: {$regex: safeQuery, $options: 'i'}},
                             ],
                         };
 

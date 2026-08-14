@@ -35,9 +35,10 @@ export class CSVGeneratorTool implements BaseTool {
                 };
             }
 
-            const filename = validated.filename.endsWith('.csv')
-                ? validated.filename
-                : `${validated.filename}.csv`;
+            const rawFilename = path.basename(validated.filename).replace(/[^a-zA-Z0-9_.-]/g, '');
+            const filename = rawFilename.endsWith('.csv')
+                ? rawFilename
+                : `${rawFilename || 'data'}.csv`;
 
             const filepath = path.join(this.outputDir, filename);
 

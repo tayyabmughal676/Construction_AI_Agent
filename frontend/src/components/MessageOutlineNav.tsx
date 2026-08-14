@@ -1,5 +1,5 @@
 import React from 'react';
-import { Message } from '../App';
+import { Message } from '../types';
 import { Hash } from 'lucide-react';
 
 interface MessageOutlineNavProps {

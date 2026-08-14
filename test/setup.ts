@@ -26,9 +26,12 @@ mock.module("mongodb", () => {
         };
       }
     },
-    ObjectId: class {
+    ObjectId: class MockObjectId {
       constructor(id = "123456789012345678901234") {
         return id;
+      }
+      static isValid(id: any): boolean {
+        return typeof id === 'string' && /^[0-9a-fA-F]{24}$/.test(id);
       }
     }
   };

@@ -1,10 +1,17 @@
 import { Elysia } from 'elysia';
 import { AgentRegistry } from '../agents/AgentRegistry';
 import { logger } from '../config/logger';
+import { mongodb } from '../db/mongodb';
+import { ObjectId } from 'mongodb';
+
+function buildInventoryFilter(id: string) {
+    if (ObjectId.isValid(id) && id.length === 24) {
+        return { $or: [{ itemCode: id }, { sku: id }, { _id: new ObjectId(id) }] };
+    }
+    return { $or: [{ itemCode: id }, { sku: id }] };
+}
 
 const manufacturingRouter = new Elysia();
-
-import { mongodb } from '../db/mongodb';
 
 /**
  * GET /api/manufacturing/inventory
@@ -89,7 +96,7 @@ manufacturingRouter.put('/inventory/:id', async (c) => {
         updateData.updatedAt = new Date();
 
         await db.collection('inventory').updateOne(
-            { $or: [{ itemCode: id }, { sku: id }, { _id: id as any }] },
+            buildInventoryFilter(id),
             { $set: updateData }
         );
 
@@ -110,9 +117,9 @@ manufacturingRouter.delete('/inventory/:id', async (c) => {
         const { id } = c.params;
         const db = mongodb.getDb();
 
-        await db.collection('inventory').deleteOne({
-            $or: [{ itemCode: id }, { sku: id }, { _id: id as any }]
-        });
+        await db.collection('inventory').deleteOne(
+            buildInventoryFilter(id)
+        );
 
         return { success: true, message: 'Inventory item deleted successfully' };
     } catch (error) {

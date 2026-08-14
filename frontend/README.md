@@ -95,20 +95,44 @@ It provides an intuitive ChatGPT-style **Unified Intelligence Terminal** alongsi
 
 ---
 
-## 🧩 Component Architecture
+## 🧩 Component & Hook Architecture
 
 ```
 frontend/src/
+├── types/
+│   └── index.ts              # Type definitions (Message, Thread, Detection, Views, etc.)
+├── constants/
+│   └── departmentTheme.ts    # Department colors, icons, badge borders, suggestion chips
+├── services/
+│   └── api.ts                # Centralized HTTP client (ApiService: Auth, REST, Swarm, Approvals)
+├── hooks/
+│   ├── useAuth.ts            # Session lifecycle, token sync, login, register, auto-login
+│   ├── useChatThreads.ts     # Thread lifecycle (create, delete, pin, switch, localStorage)
+│   ├── useSpeechRecognition.ts # Voice-to-text recording, transcript sync, browser fallbacks
+│   └── useMentionTools.ts    # @-mention parser, tool search, keyboard navigation
 ├── components/
+│   ├── auth/
+│   │   └── AuthScreen.tsx    # Sign In & Create Account modal screen
+│   ├── layout/
+│   │   ├── Sidebar.tsx       # Collapsible sidebar, thread switcher, pin/delete actions
+│   │   └── Header.tsx        # Top bar, v1/v2 Engine switcher, live heartbeat badge
+│   ├── chat/
+│   │   ├── ChatTerminal.tsx  # Intelligence Terminal container
+│   │   ├── WelcomeScreen.tsx # Capabilities overview cards & Quick Action chips
+│   │   ├── MessageItem.tsx   # Message bubble with markdown, badges & tool tags
+│   │   ├── FileDownloadCard.tsx # Download cards for generated CSV, XLSX, and PDF files
+│   │   └── ChatInput.tsx     # Textarea auto-resize, voice input, @-mention popup
+│   ├── ApprovalModal.tsx     # LangGraph Swarm PO human approval modal
+│   ├── DeleteModal.tsx       # Delete thread confirmation modal
+│   ├── Toast.tsx             # Animated Toast Notification Provider & Context
 │   ├── Construction.tsx      # Site Terminal (Full CRUD, Project IDs, Progress bars)
 │   ├── HR.tsx                # HR Workforce Hub (Full CRUD, Employee IDs, Search)
 │   ├── Manufacturing.tsx     # Fabrication Node (Full CRUD, SKUs, OEE stats)
-│   ├── Toast.tsx             # Animated Toast Notification Provider & Context
 │   └── Workflow.tsx          # LangGraph Interactive 4-Step Workflow Wizard
 ├── test/
 │   ├── Terminal.test.ts      # Unit tests for @-mention filter & badge icons
 │   └── Toast.test.ts         # Unit tests for Toast queue & style mapping
-├── App.tsx                   # Unified Intelligence Terminal & Sidebar
+├── App.tsx                   # Declarative Root Orchestrator
 ├── index.css                 # TailwindCSS utility layers & dark mode styling
 ├── main.tsx                  # React root & ToastProvider wrapper
 └── vite-env.d.ts             # Vite client type definitions

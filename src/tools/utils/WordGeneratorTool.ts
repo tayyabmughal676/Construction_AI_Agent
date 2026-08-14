@@ -40,9 +40,10 @@ export class WordGeneratorTool implements BaseTool {
         try {
             const validated = WordGeneratorSchema.parse(params);
 
-            const filename = validated.filename.endsWith('.docx')
-                ? validated.filename
-                : `${validated.filename}.docx`;
+            const rawFilename = path.basename(validated.filename).replace(/[^a-zA-Z0-9_.-]/g, '');
+            const filename = rawFilename.endsWith('.docx')
+                ? rawFilename
+                : `${rawFilename || 'document'}.docx`;
 
             const filepath = path.join(this.outputDir, filename);
 

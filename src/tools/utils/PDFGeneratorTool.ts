@@ -38,9 +38,10 @@ export class PDFGeneratorTool implements BaseTool {
         try {
             const validated = PDFGeneratorSchema.parse(params);
 
-            const filename = validated.filename.endsWith('.pdf')
-                ? validated.filename
-                : `${validated.filename}.pdf`;
+            const rawFilename = path.basename(validated.filename).replace(/[^a-zA-Z0-9_.-]/g, '');
+            const filename = rawFilename.endsWith('.pdf')
+                ? rawFilename
+                : `${rawFilename || 'document'}.pdf`;
 
             const filepath = path.join(this.outputDir, filename);
 

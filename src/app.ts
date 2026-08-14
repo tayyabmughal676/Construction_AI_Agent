@@ -141,6 +141,7 @@ app.group('/api', (api) => api
     .group('/hr', (group) => group.use(requireRole(['admin', 'user'])).use(hrRouter))
     .group('/construction', (group) => group.use(requireRole(['admin', 'user'])).use(constructionRouter))
     .group('/manufacturing', (group) => group.use(requireRole(['admin', 'user'])).use(manufacturingRouter))
+    .group('/v2/graph', (group) => group.use(requireRole(['admin', 'user'])).use(v2graphRouter))
     .use(filesRouter)
     .get('/', (c) => {
         return {
@@ -164,7 +165,5 @@ app.group('/api', (api) => api
         return { error: 'API endpoint error', message: (error as Error)?.message || 'Unknown error' };
     })
 );
-
-app.use(v2graphRouter);
 
 export default app;

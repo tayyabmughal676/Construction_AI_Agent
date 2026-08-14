@@ -9,6 +9,14 @@ import { AgentRegistry } from '../agents/AgentRegistry'; // Added import for Age
 const constructionRouter = new Elysia();
 
 import { mongodb } from '../db/mongodb';
+import { ObjectId } from 'mongodb';
+
+function buildIdFilter(id: string, customIdField: string) {
+    if (ObjectId.isValid(id) && id.length === 24) {
+        return { $or: [{ [customIdField]: id }, { _id: new ObjectId(id) }] };
+    }
+    return { [customIdField]: id };
+}
 
 /**
  * GET /api/construction/projects
@@ -90,7 +98,7 @@ constructionRouter.put('/projects/:id', async (c) => {
         updateData.updatedAt = new Date();
 
         await db.collection('projects').updateOne(
-            { $or: [{ projectId: id }, { _id: id as any }] },
+            buildIdFilter(id, 'projectId'),
             { $set: updateData }
         );
 
@@ -111,9 +119,9 @@ constructionRouter.delete('/projects/:id', async (c) => {
         const { id } = c.params;
         const db = mongodb.getDb();
 
-        await db.collection('projects').deleteOne({
-            $or: [{ projectId: id }, { _id: id as any }]
-        });
+        await db.collection('projects').deleteOne(
+            buildIdFilter(id, 'projectId')
+        );
 
         return { success: true, message: 'Project deleted successfully' };
     } catch (error) {

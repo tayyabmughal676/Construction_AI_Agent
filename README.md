@@ -238,32 +238,36 @@ curl -X POST http://localhost:3000/api/workflows/langgraph/company-control \
 
 ```
 .
-├── frontend/                 # React 19 + Vite + TailwindCSS UI Application
+├── frontend/                 # React 19 + Vite + TailwindCSS Modular UI Application
 │   ├── src/
-│   │   ├── components/       # Department Hubs (HR, Construction, Manufacturing, Workflow, Toast)
-│   │   ├── App.tsx           # Full-screen Unified Intelligence Terminal
-│   │   └── main.tsx          # ToastProvider & React root
+│   │   ├── types/            # Shared TypeScript type definitions
+│   │   ├── constants/        # Department themes, icons, navigation, & suggestion chips
+│   │   ├── services/         # Centralized API client (ApiService)
+│   │   ├── hooks/            # Custom hooks (useAuth, useChatThreads, useSpeechRecognition, useMentionTools)
+│   │   ├── components/       # UI Components
+│   │   │   ├── auth/         # AuthScreen (Login / Registration)
+│   │   │   ├── layout/       # Sidebar & Header layout chrome
+│   │   │   ├── chat/         # ChatTerminal, MessageItem, FileDownloadCard, ChatInput, WelcomeScreen
+│   │   │   └── Hubs/Modals   # HR, Construction, Manufacturing, Workflow, ApprovalModal, DeleteModal, Toast
+│   │   ├── App.tsx           # Declarative Root Orchestrator
+│   │   └── main.tsx          # ToastProvider & React entry
 ├── screenshots/              # UI/UX Screenshots & Gallery
-│   ├── s1.png                # Intelligence Terminal & Autocomplete
-│   ├── s2.png / s2.1.png     # HR Workforce Hub & Modals
-│   ├── s3.png                # Site Terminal (Construction)
-│   ├── s4.png                # Fabrication Node (Manufacturing)
-│   ├── s5.png                # LangGraph Workflow Center
-│   └── s6.png                # Toast Alerts & Downloads
-├── src/                      # Elysia.js Backend Application
-│   ├── agents/               # Domain Agents & Intelligent Agent Router
-│   ├── config/               # Logger, env, and capability configurations
-│   ├── db/                   # MongoDB client, text indexes, & Redis connection
-│   ├── routes/               # API endpoint route handlers
+├── src/                      # Elysia.js Hardened Backend Application
+│   ├── agents/               # Domain Agents, Registry & Dynamic Intent Layer
+│   ├── config/               # Logger, env validator, and capability configurations
+│   ├── db/                   # MongoDB client, text indexes, models & Redis connection
+│   ├── middleware/           # Auth, RBAC, and rate limiting security middleware
+│   ├── routes/               # API endpoint route handlers (auth, agents, v2graph, hubs, files)
 │   ├── services/             # Groq LLM & LM Studio AI integration
-│   ├── tools/                # 16 specialized domain & exporter tools
-│   ├── workflows/langgraph/  # 6 LangGraph StateGraph enterprise workflows
+│   ├── tools/                # 16 specialized domain, communication & exporter tools
+│   ├── workflows/langgraph/  # LangGraph v2 MultiAgentSwarmGraph & 6 enterprise workflows
 │   └── seed.ts               # Enterprise database seeder
+├── test/                     # 54 Automated Unit & Security Test Suites
 ├── docker-compose.yml        # Local MongoDB & Redis stack
 ├── AGENTS.md                 # Agent architecture & tool specifications
 ├── CHANGELOG.md              # Project version release history
+├── SECURITY.md               # Full Security Vulnerability Assessment & Resolution Matrix
 ├── v2-work.md                # 2-Phase V2 Swarm Engine roadmap
-├── n8n-workflow-plan.md      # Enterprise n8n & Profit Automation Plan
 └── README.md                 # Project documentation
 ```
 

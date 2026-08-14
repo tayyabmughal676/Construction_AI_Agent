@@ -38,9 +38,10 @@ export class ExcelGeneratorTool implements BaseTool {
                 };
             }
 
-            const filename = validated.filename.endsWith('.xlsx')
-                ? validated.filename
-                : `${validated.filename}.xlsx`;
+            const rawFilename = path.basename(validated.filename).replace(/[^a-zA-Z0-9_.-]/g, '');
+            const filename = rawFilename.endsWith('.xlsx')
+                ? rawFilename
+                : `${rawFilename || 'spreadsheet'}.xlsx`;
 
             const filepath = path.join(this.outputDir, filename);
 

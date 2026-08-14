@@ -4,7 +4,7 @@ import { MongoDBSaver } from '../workflows/langgraph/MongoDBSaver';
 import { logger } from '../config/logger';
 import { randomUUID } from 'crypto';
 
-export const v2graphRouter = new Elysia({ prefix: '/api/v2/graph' })
+export const v2graphRouter = new Elysia()
   /**
    * POST /api/v2/graph/chat
    * Main v2.x LangGraph Autonomous Multi-Agent Swarm Endpoint

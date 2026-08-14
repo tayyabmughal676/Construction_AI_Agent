@@ -42,4 +42,10 @@ const envSchema = z.object({
 
 export type Env = z.infer<typeof envSchema>;
 
-export const env = envSchema.parse(process.env);
+const parsedEnv = envSchema.parse(process.env);
+
+if (parsedEnv.NODE_ENV === 'production' && (parsedEnv.JWT_SECRET === 'dev-secret-key' || parsedEnv.JWT_SECRET.length < 16)) {
+    throw new Error('SECURITY ERROR: JWT_SECRET must be configured with a secure key (min 16 chars) in production mode.');
+}
+
+export const env = parsedEnv;

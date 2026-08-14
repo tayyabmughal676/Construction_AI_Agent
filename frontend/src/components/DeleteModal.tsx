@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Trash2, AlertTriangle, X } from 'lucide-react';
-import { Thread } from '../App';
+import { Thread } from '../types';
 
 interface DeleteModalProps {
   thread: Thread | null;

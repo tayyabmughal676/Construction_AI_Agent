@@ -2,6 +2,8 @@ import type {BaseTool, ToolResult} from '../../agents/types';
 import {z} from 'zod';
 import nodemailer from 'nodemailer';
 import {Validator} from '../../utils/validators';
+import path from 'path';
+import fs from 'fs';
 
 const EmailSenderSchema = z.object({
     to: z.union([z.string(), z.array(z.string())]),
@@ -89,6 +91,32 @@ export class EmailSenderTool implements BaseTool {
                 }
             }
 
+            // Validate attachment paths (SEC-03: Prevent arbitrary file exfiltration)
+            const allowedBaseDir = path.resolve(process.cwd(), 'generated');
+            const sanitizedAttachments: Array<{ filename: string; path: string }> = [];
+
+            if (validated.attachments && validated.attachments.length > 0) {
+                for (const att of validated.attachments) {
+                    const resolvedPath = path.resolve(att.path);
+                    if (!resolvedPath.startsWith(allowedBaseDir)) {
+                        return {
+                            success: false,
+                            error: `Access denied: Attachment file path must reside within generated directory (${att.path})`,
+                        };
+                    }
+                    if (!fs.existsSync(resolvedPath)) {
+                        return {
+                            success: false,
+                            error: `Attachment file does not exist: ${att.filename}`,
+                        };
+                    }
+                    sanitizedAttachments.push({
+                        filename: path.basename(att.filename),
+                        path: resolvedPath,
+                    });
+                }
+            }
+
             // Prepare email options
             const mailOptions: nodemailer.SendMailOptions = {
                 from: process.env.SMTP_FROM || process.env.SMTP_USER,
@@ -105,8 +133,8 @@ export class EmailSenderTool implements BaseTool {
                 mailOptions.bcc = Array.isArray(validated.bcc) ? validated.bcc.join(', ') : validated.bcc;
             }
 
-            if (validated.attachments && validated.attachments.length > 0) {
-                mailOptions.attachments = validated.attachments;
+            if (sanitizedAttachments.length > 0) {
+                mailOptions.attachments = sanitizedAttachments;
             }
 
             // Send email

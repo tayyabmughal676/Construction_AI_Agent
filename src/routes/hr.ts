@@ -1,7 +1,14 @@
 import { Elysia } from 'elysia';
-import { AgentRegistry } from '../agents/AgentRegistry';
 import { mongodb } from '../db/mongodb';
+import { ObjectId } from 'mongodb';
 import { logger } from '../config/logger';
+
+function buildIdFilter(id: string, customIdField: string) {
+    if (ObjectId.isValid(id) && id.length === 24) {
+        return { $or: [{ [customIdField]: id }, { _id: new ObjectId(id) }] };
+    }
+    return { [customIdField]: id };
+}
 
 const hrRouter = new Elysia();
 
@@ -88,7 +95,7 @@ hrRouter.put('/employees/:id', async (c) => {
         updateData.updatedAt = new Date();
 
         await db.collection('employees').updateOne(
-            { $or: [{ employeeId: id }, { _id: id as any }] },
+            buildIdFilter(id, 'employeeId'),
             { $set: updateData }
         );
 
@@ -109,9 +116,9 @@ hrRouter.delete('/employees/:id', async (c) => {
         const { id } = c.params;
         const db = mongodb.getDb();
 
-        await db.collection('employees').deleteOne({
-            $or: [{ employeeId: id }, { _id: id as any }]
-        });
+        await db.collection('employees').deleteOne(
+            buildIdFilter(id, 'employeeId')
+        );
 
         return { success: true, message: 'Employee deleted successfully' };
     } catch (error) {

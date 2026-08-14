@@ -64,10 +64,11 @@ export const rateLimiter = (options: {
     const message = options.message || 'Too many requests, please try again later';
 
     return async (c: Context) => {
-        // Get client IP
+        // Get client IP with defensive sanitization
         const forwardedFor = c.headers['x-forwarded-for'];
         const realIp = c.headers['x-real-ip'];
-        const ip = forwardedFor?.split(',')[0]?.trim() || realIp || 'unknown';
+        const rawIp = forwardedFor?.split(',')[0]?.trim() || realIp || '127.0.0.1';
+        const ip = rawIp.replace(/[^0-9a-fA-F:.]/g, '').substring(0, 45) || '127.0.0.1';
 
         const key = `ratelimit:${ip}`;
 

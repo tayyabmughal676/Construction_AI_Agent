@@ -4,6 +4,33 @@ All notable changes to the Multi-Agent Enterprise Orchestrator will be documente
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to Semantic Versioning.
 
+## [2.3.0] - 2026-08-14
+
+### Security & Hardening
+- **🛡️ Full Enterprise Security Audit & Documentation (`SECURITY.md`):** Published comprehensive security assessment covering 9 vulnerabilities (`SEC-01` through `SEC-09`) and 1 BSON query bug (`BUG-01`), now 100% resolved.
+- **🔴 SEC-01 (Privilege Escalation Protection):** Enforced hardcoded `role: 'user'` in public registration (`src/routes/auth.ts`) to block mass assignment role tampering.
+- **🟠 SEC-02 (LangGraph v2 Swarm Authentication):** Scoped all `/api/v2/graph/*` endpoints under the authenticated route group with `requireRole(['admin', 'user'])`.
+- **🟠 SEC-03 & SEC-04 (Path Traversal & Attachment Exfiltration Protection):** Enforced strict `./generated/` directory whitelisting and `path.basename()` filename sanitization across `EmailSenderTool.ts`, `PDFGeneratorTool.ts`, `ExcelGeneratorTool.ts`, `CSVGeneratorTool.ts`, and `WordGeneratorTool.ts`.
+- **🟡 SEC-05 (Defensive Rate Limiter IP Extraction):** Sanitized `X-Forwarded-For` headers with strict IP regex to eliminate header spoofing and injection.
+- **🟡 SEC-06 (Production JWT Secret Enforcement):** Added production startup validation rejecting default `'dev-secret-key'`.
+- **🟡 SEC-07 (RegEx Injection & ReDoS Protection):** Escaped special regex characters in `EmployeeDirectoryTool.ts` prior to MongoDB queries.
+- **🟡 BUG-01 (MongoDB ObjectId Query Casting):** Implemented `buildIdFilter` supporting safe hex `ObjectId` matching and fallback custom string IDs.
+- **🧪 17 Dedicated Security Unit Tests (`test/security.test.ts`):** Automated verification covering all security patches with 100% pass rate.
+
+### Frontend Architecture Refactoring
+- **🧩 Clean Modular Decomposition:** Refactored monolithic `App.tsx` (~1,340 lines) into an industry-standard, scalable React 19 + TypeScript architecture.
+- **🪝 Domain Custom Hooks:**
+  - `useAuth`: Encapsulates session state, login, registration with auto-login, logout, and token restoration.
+  - `useChatThreads`: Manages chat sessions, pinning, deleting, and `localStorage` persistence.
+  - `useSpeechRecognition`: Encapsulates hands-free voice-to-text recording with browser compatibility handling.
+  - `useMentionTools`: Real-time `@` tool discovery, search filtering, and keyboard navigation.
+- **🌐 Centralized API Client (`ApiService`):** Standardized HTTP client for authentication, REST agent chat, v2 LangGraph Swarm execution, and PO approval.
+- **🎨 Modular Presentation Layer:** Isolated into `components/auth/AuthScreen.tsx`, `components/layout/Sidebar.tsx`, `components/layout/Header.tsx`, `components/chat/ChatTerminal.tsx`, `components/chat/MessageItem.tsx`, `components/chat/FileDownloadCard.tsx`, and `components/chat/ChatInput.tsx`.
+- **🚀 Instant Auto-Login & Stale Token Invalidation:** Automated login transition on signup and automatic 401 interceptor clearing expired JWT sessions.
+- **🧪 Full Test Suite Success:** **54 passing tests across 12 test files (123 assertions, 0 failures)**.
+
+---
+
 ## [2.2.0] - 2026-08-03
 
 ### Refactored & Hardened
